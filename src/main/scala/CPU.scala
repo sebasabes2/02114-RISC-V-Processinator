@@ -37,17 +37,20 @@ class CPU extends Module {
   val operand2 = WireDefault(0.U(32.W))
   val ALUWB = WireDefault(false.B)
   val MemWB = WireDefault(false.B)
+  val ALUmode = WireDefault(0.U(3.W))
 
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := reg(rs1)
       operand2 := reg(rs2)
       ALUWB := true.B
+      ALUmode := funct3
     }
     is (Opcodes.addi) {
       operand1 := reg(rs1)
       operand2 := I_imm
       ALUWB := true.B
+      ALUmode := funct3
     }
     is (Opcodes.load) {
       operand1 := reg(rs1)
@@ -77,9 +80,45 @@ class CPU extends Module {
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
   val ALUResult = WireDefault(0.U(32.W))
+
   switch (funct3) {
     is (0.U) {
-      ALUResult := op1 + op2
+      switch (funct7){
+        is(0.U){ //add
+          ALUResult := op1 + op2
+        }
+        is(32.U){ //sra
+          ALUResult := op1 - op2
+        }
+      }
+    }
+    is (1.U){
+      ALUResult := op1 << op2(5,0)
+    }
+    is (2.U){
+      ALUResult := op1.asSInt < op2.asSInt
+    }
+    is (3.U){
+      ALUResult := op1 < op2
+    }
+    is (4.U){
+      ALUResult := op1 ^ op2
+    }
+    is (5.U){ //check if SInt is on srl or sra
+      switch (funct7){
+        is(0.U){ //srl
+          ALUResult := (op1.asSInt >> op2(5,0)).asUInt
+        }
+        is(32.U){ //sra
+          ALUResult := op1 >> op2(5,0) //test if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
+        }
+      }
+    }
+    is (6.U){
+      ALUResult := op1 | op2
+    }
+    is (7.U){
+      ALUResult := op1 & op2
     }
   }
 
