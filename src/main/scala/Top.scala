@@ -6,13 +6,14 @@ class Top extends Module {
     val led = Output(Vec(16, Bool()))
   })
 
-  io.led := Seq.fill(16)(false.B)
-
   val CPU = Module(new CPU())
+  val instMem = Module(new Memory(0x1000, 0x0000))
+  val dataMem = Module(new Memory(0x1000, 0x1000))
+  instMem.io <> CPU.io.inst
+  dataMem.io <> CPU.io.data
 
-  CPU.io.readData := 0.U
-  CPU.io.instData := 0x07b00093.U
-
+  // Debug
+  io.led := Seq.fill(16)(false.B)
   io.led(0) := CPU.io.debug
 }
 

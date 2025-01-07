@@ -3,14 +3,8 @@ import chisel3.util._
 
 class CPU extends Module {
   val io = IO(new Bundle {
-    val instAddr = Output(UInt(32.W))
-    val instData = Input(UInt(32.W))
-
-    val addr = Output(UInt(32.W))
-    val readData = Input(UInt(32.W))
-    val writeData = Output(UInt(32.W))
-    val write = Output(Bool())
-
+    val inst = new Bus()
+    val data = new Bus()
     val debug = Output(Bool())
   })
 
@@ -18,19 +12,21 @@ class CPU extends Module {
   val PC = RegInit(0.U(32.W))
 
   // Fetch
-  io.instAddr := PC
+  io.inst.addr := PC
+  io.inst.write := false.B
+  io.inst.writeData := 0.U
   PC := PC + 4.U
 
   // Decode
-  val instruction = io.instData
+  val instruction = io.inst.readData
   when (instruction === 0x07b00093.U) {
     reg(1.U) := 123.U 
   }
 
   // Memory
-  io.addr := 0.U
-  io.writeData := 0.U
-  io.write := false.B
+  io.data.addr := 0.U
+  io.data.writeData := 0.U
+  io.data.write := false.B
 
   // Debug
   io.debug := reg(1.U) === 123.U
