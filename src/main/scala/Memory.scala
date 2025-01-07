@@ -19,7 +19,7 @@ class Memory(size: Int, start: Int) extends Module {
   } .otherwise {
     io.readData := 0.U
   }
-  when (io.write) {
+  when (io.write) { // RegNext(page === (start/size).U)
     mem.write(index, io.writeData)
   }
 

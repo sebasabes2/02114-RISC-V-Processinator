@@ -2,14 +2,14 @@ import chisel3._
 import chisel3.util._
 
 object Opcodes{
-  val UPCadd    = 51.U
-  val UPCaddi   = 19.U
-  val UPCload   = 3.U
-  val UPCstore  = 35.U
-  val UPCbranch = 99.U
-  val UPCjal    = 111.U
-  val UPCjalr   = 113.U
-  val UPClui    = 55.U
-  val UPCauipc  = 23.U
-  val UPCecall  = 115.U
+  val add    = 51.U
+  val addi   = 19.U
+  val load   = 3.U
+  val store  = 35.U
+  val branch = 99.U
+  val jal    = 111.U
+  val jalr   = 113.U
+  val lui    = 55.U
+  val auipc  = 23.U
+  val ecall  = 115.U
 }

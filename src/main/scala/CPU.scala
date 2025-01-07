@@ -21,26 +21,82 @@ class CPU extends Module {
   val instruction = io.inst.readData
 
   val opcode = instruction(6,0) //control
-  val rd = RegNext(instruction(11,7)) // write register
-  val funct3 = RegNext(instruction(14,12))
-  val rs1 = RegNext(instruction(19,15)) //read register 1
-  val rs2 = RegNext(instruction(24,20)) //read register 2
-  val funct7 = RegNext(instruction(31,25))
+  val rd = (instruction(11,7)) // write register
+  val funct3 = (instruction(14,12))
+  val rs1 = (instruction(19,15)) //read register 1
+  val rs2 = (instruction(24,20)) //read register 2
+  val funct7 = (instruction(31,25))
 
-  val I_imm = RegNext(instruction(31,20))
-  val S_imm = RegNext(instruction(31,25) ## instruction(11,7))
-  val B_imm = RegNext(instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
-  val U_imm = RegNext(instruction(31,12))
-  val J_imm = RegNext(instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21))
+  val I_imm = (instruction(31,20))
+  val S_imm = (instruction(31,25) ## instruction(11,7))
+  val B_imm = (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
+  val U_imm = (instruction(31,12))
+  val J_imm = (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21))
+
+  val operand1 = WireDefault(0.U(32.W))
+  val operand2 = WireDefault(0.U(32.W))
+  val ALUWB = WireDefault(false.B)
+  val MemWB = WireDefault(false.B)
+
+  switch (opcode) {
+    is (Opcodes.add) {
+      operand1 := reg(rs1)
+      operand2 := reg(rs2)
+      ALUWB := true.B
+    }
+    is (Opcodes.addi) {
+      operand1 := reg(rs1)
+      operand2 := I_imm
+      ALUWB := true.B
+    }
+    is (Opcodes.load) {
+      operand1 := reg(rs1)
+      operand2 := I_imm
+      MemWB := true.B
+    }
+    is (Opcodes.store) {
+      operand1 := reg(rs1)
+      operand2 := S_imm
+    }
+    is (Opcodes.branch) {
+      // complicated
+    }
+    is (Opcodes.lui) {
+      operand1 := U_imm << 12.U
+      operand2 := 0.U
+      ALUWB := true.B
+    }
+    is (Opcodes.auipc) {
+      operand1 := U_imm << 12.U
+      operand2 := PC
+      ALUWB := true.B
+    }
+  }
 
   // Execute
-
-  reg(rd) := reg(rs1) + reg(rs2)
+  val op1 = RegNext(operand1)
+  val op2 = RegNext(operand2)
+  val ALUResult = WireDefault(0.U(32.W))
+  switch (funct3) {
+    is (0.U) {
+      ALUResult := op1 + op2
+    }
+  }
 
   // Memory
-  io.data.addr := 0.U
+  io.data.addr := ALUResult
   io.data.writeData := 0.U
   io.data.write := false.B
+
+  // Writeback
+  val destination = RegNext(RegNext(RegNext(rd)))
+  when (destination =/= 0.U) {
+    when (RegNext(RegNext(RegNext(ALUWB)))) {
+      reg(destination) := RegNext(RegNext(ALUResult))
+    } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
+      reg(destination) := io.data.readData
+    }
+  }
 
   // Debug
   io.debug := reg(1.U) === 123.U
