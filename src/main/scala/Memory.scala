@@ -22,17 +22,7 @@ class Memory(size: Int, start: Int) extends Module {
     io.readData := 0.U
     io.readValid := false.B
   }
-  when (io.write && (page === (start/size).U)) { // RegNext(page === (start/size).U)
+  when (io.write && (page === (start/size).U)) {
     mem.write(index, io.writeData)
   }
-
-  // Debug
-  // when (reset.asBool) {
-  //   mem.write(0.U, 0x00002137.U) // lui x2, 2
-  // } .elsewhen (RegNext(reset.asBool)) {
-  //   mem.write(0.U, 0x00600093.U) // addi x1, x0, 6
-  // } .elsewhen (RegNext(RegNext(reset.asBool))) {
-  //   mem.write(0.U, 0x00112023.U) // sw x1, 0(x2)
-  // }
-  // println("size, size/4, width, width-1, start/size", size, size/4, width, width-1, start/size)
 }
