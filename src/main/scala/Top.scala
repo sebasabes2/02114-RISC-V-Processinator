@@ -34,10 +34,10 @@ class Top extends Module {
   // )
 
   val program = Array (
-    0x00000093, // li x1, 0      # loop index 
-    0x00001137, // li x2, 0x1000 # max loop
-    0x00100193, // li x3, 1      # LED on
-    0x00002237, // li x4, 0x2000 # LED address
+    0x00000093, // li x1, 0        # loop index 
+    0x006cf137, // li x2, 0x6cf000 # max loop
+    0x00100193, // li x3, 1        # LED on
+    0x00002237, // li x4, 0x2000   # LED address
                 
                 // loop 1:
     0x00108093, // addi x1, x1, 1
