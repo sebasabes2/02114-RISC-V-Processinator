@@ -30,21 +30,24 @@ class CPU extends Module {
   val I_imm = (instruction(31,20))
   val S_imm = (instruction(31,25) ## instruction(11,7))
   val B_imm = (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
-  val U_imm = (instruction(31,12))
-  val J_imm = (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21))
+  val U_imm = (instruction(31,12) ## 0.U(12.W))
+  val J_imm = (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
 
   val operand1 = WireDefault(0.U(32.W))
   val operand2 = WireDefault(0.U(32.W))
   val ALUWB = WireDefault(false.B)
   val MemWB = WireDefault(false.B)
-  val ALUmode = WireDefault(0.U(3.W))
+  val MemStore = WireDefault(false.B)
+  val ALUmode = WireDefault(0.U(4.W))
+  val destination = WireDefault(0.U(5.W))
+  val source = WireDefault(0.U(5.W))
 
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := reg(rs1)
       operand2 := reg(rs2)
       ALUWB := true.B
-      ALUmode := funct3
+      ALUmode := funct7(5) ## funct3
     }
     is (Opcodes.addi) {
       operand1 := reg(rs1)
@@ -60,17 +63,18 @@ class CPU extends Module {
     is (Opcodes.store) {
       operand1 := reg(rs1)
       operand2 := S_imm
+      MemStore := true.B
     }
     is (Opcodes.branch) {
       // complicated
     }
     is (Opcodes.lui) {
-      operand1 := U_imm << 12.U
+      operand1 := U_imm
       operand2 := 0.U
       ALUWB := true.B
     }
     is (Opcodes.auipc) {
-      operand1 := U_imm << 12.U
+      operand1 := U_imm
       operand2 := PC
       ALUWB := true.B
     }
@@ -80,16 +84,14 @@ class CPU extends Module {
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
   val ALUResult = WireDefault(0.U(32.W))
+  val ex_ALUmode = RegNext(ALUmode)
 
-  switch (funct3) {
+  switch (ex_ALUmode(2,0)) {
     is (0.U) {
-      switch (funct7){
-        is(0.U){ //add
-          ALUResult := op1 + op2
-        }
-        is(32.U){ //sra
-          ALUResult := op1 - op2
-        }
+      when (ex_ALUmode(3)) {
+        ALUResult := op1 - op2
+      } .otherwise {
+        ALUResult := op1 + op2
       }
     }
     is (1.U){
@@ -105,13 +107,10 @@ class CPU extends Module {
       ALUResult := op1 ^ op2
     }
     is (5.U){ //check if SInt is on srl or sra
-      switch (funct7){
-        is(0.U){ //srl
-          ALUResult := (op1.asSInt >> op2(5,0)).asUInt
-        }
-        is(32.U){ //sra
-          ALUResult := op1 >> op2(5,0) //test if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
-        }
+      when (ex_ALUmode(3)) { //sra
+        ALUResult := op1 >> op2(5,0) //test if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
+      } .otherwise { //srl
+        ALUResult := (op1.asSInt >> op2(5,0)).asUInt
       }
     }
     is (6.U){
@@ -123,17 +122,17 @@ class CPU extends Module {
   }
 
   // Memory
-  io.data.addr := ALUResult
-  io.data.writeData := 0.U
-  io.data.write := false.B
+  io.data.addr := RegNext(ALUResult)
+  io.data.writeData := reg(RegNext(RegNext(source)))
+  io.data.write := RegNext(RegNext(MemStore))
 
   // Writeback
-  val destination = RegNext(RegNext(RegNext(rd)))
-  when (destination =/= 0.U) {
+  val wb_destination = RegNext(RegNext(RegNext(rd)))
+  when (wb_destination =/= 0.U) {
     when (RegNext(RegNext(RegNext(ALUWB)))) {
-      reg(destination) := RegNext(RegNext(ALUResult))
+      reg(wb_destination) := RegNext(RegNext(ALUResult))
     } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
-      reg(destination) := io.data.readData
+      reg(wb_destination) := io.data.readData
     }
   }
 
