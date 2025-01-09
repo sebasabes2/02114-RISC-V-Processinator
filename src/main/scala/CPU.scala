@@ -31,14 +31,15 @@ class CPU extends Module {
   val rs2 = (instruction(24,20)) //read register 2
   val funct7 = (instruction(31,25))
 
-  val I_imm = (instruction(31,20)) // (missing) only unsinged for now
-  val S_imm = (instruction(31,25) ## instruction(11,7))
-  val B_imm = (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
-  val U_imm = (instruction(31,12) ## 0.U(12.W))
-  val J_imm = (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
+  // (missing) only unsinged for now
+  val I_imm = (instruction(31,20)).asSInt()
+  val S_imm = (instruction(31,25) ## instruction(11,7)).asSInt()
+  val B_imm = (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W)).asSInt()
+  val U_imm = (instruction(31,12) ## 0.U(12.W)).asSInt()
+  val J_imm = (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W)).asSInt()
 
-  val operand1 = WireDefault(0.U(32.W))
-  val operand2 = WireDefault(0.U(32.W))
+  val operand1 = WireDefault(0.S(32.W))
+  val operand2 = WireDefault(0.S(32.W))
   val ALUWB = WireDefault(false.B)
   val MemWB = WireDefault(false.B)
   val MemStore = WireDefault(false.B)
@@ -46,24 +47,24 @@ class CPU extends Module {
 
   switch (opcode) {
     is (Opcodes.add) {
-      operand1 := reg(rs1)
-      operand2 := reg(rs2)
+      operand1 := reg(rs1).asSInt()
+      operand2 := reg(rs2).asSInt()
       ALUWB := true.B
       ALUmode := funct7(5) ## funct3
     }
     is (Opcodes.addi) {
-      operand1 := reg(rs1)
+      operand1 := reg(rs1).asSInt()
       operand2 := I_imm
       ALUWB := true.B
       ALUmode := funct3 //(missing) if srli check for func7
     }
     is (Opcodes.load) {
-      operand1 := reg(rs1)
+      operand1 := reg(rs1).asSInt()
       operand2 := I_imm
       MemWB := true.B
     }
     is (Opcodes.store) {
-      operand1 := reg(rs1)
+      operand1 := reg(rs1).asSInt()
       operand2 := S_imm
       MemStore := true.B
     }
@@ -73,12 +74,12 @@ class CPU extends Module {
     }
     is (Opcodes.lui) {
       operand1 := U_imm
-      operand2 := 0.U
+      operand2 := 0.S
       ALUWB := true.B
     }
     is (Opcodes.auipc) {
       operand1 := U_imm
-      operand2 := PC
+      operand2 := PC.asSInt()
       ALUWB := true.B
     }
   }
@@ -86,7 +87,7 @@ class CPU extends Module {
   // Execute
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
-  val ALUResult = WireDefault(0.U(32.W))
+  val ALUResult = WireDefault(0.S(32.W))
   val ex_ALUmode = RegNext(ALUmode)
 
   switch (ex_ALUmode(2,0)) {
@@ -101,10 +102,10 @@ class CPU extends Module {
       ALUResult := op1 << op2(5,0)
     }
     is (2.U){
-      ALUResult := op1.asSInt < op2.asSInt //(missing) op2 is only unsinged for now
+      ALUResult := (op1.asSInt < op2.asSInt).asSInt() //(missing) op2 is only unsinged for now
     }
     is (3.U){
-      ALUResult := op1 < op2
+      ALUResult := (op1 < op2).asSInt()
     }
     is (4.U){
       ALUResult := op1 ^ op2
@@ -113,7 +114,7 @@ class CPU extends Module {
       when (ex_ALUmode(3)) { //sra
         ALUResult := op1 >> op2(5,0) //check if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
       } .otherwise { //srl
-        ALUResult := (op1.asSInt >> op2(5,0)).asUInt
+        ALUResult := (op1.asSInt >> op2(5,0))
       }
     }
     is (6.U){
@@ -125,7 +126,7 @@ class CPU extends Module {
   }
 
   // Memory
-  io.data.addr := RegNext(ALUResult)
+  io.data.addr := RegNext(ALUResult.asUInt())
   io.data.writeData := reg(RegNext(RegNext(rs2)))
   io.data.write := RegNext(RegNext(MemStore))
 
@@ -133,7 +134,7 @@ class CPU extends Module {
   val destination = RegNext(RegNext(RegNext(rd)))
   when (destination =/= 0.U) {
     when (RegNext(RegNext(RegNext(ALUWB)))) {
-      reg(destination) := RegNext(RegNext(ALUResult))
+      reg(destination) := RegNext(RegNext(ALUResult.asUInt()))
     } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
       reg(destination) := io.data.readData
     }

@@ -27,11 +27,11 @@ class Top extends Module {
 
   // FSM boot loader
 
-  val program = Array(
-    0x00002137, // lui x2, 2
-    0x00600093, // addi x1, x0, 6
-    0x00112023  // sw x1, 0(x2)
-  )
+  // val program = Array(
+  //   0x00002137, // lui x2, 2
+  //   0x00600093, // addi x1, x0, 6
+  //   0x00112023  // sw x1, 0(x2)
+  // )
 
   val program = Array (
     0x00000093, // li x1, 0      # loop index 
@@ -44,15 +44,24 @@ class Top extends Module {
     0,
     0,
     0,
-    0xfe20cee3, // blt x1, x2, loop1
+    0xfe20c8e3L, // blt x1, x2, loop1
+    0,
+    0,
+    0,
     0x00322023, // sw x3, 0(x4)
 
                 // loop 2:
     0x403080b3, // sub x1, x1, x3
-    0xfe104ee3, // blt x0, x1, loop2
+    0,
+    0,
+    0,
+    0xfe1048e3L, // blt x0, x1, loop2
+    0,
+    0,
+    0,
     0x00022023, // sw x0, 0(x4)
 
-    0xfe0004e3, // beq x0, x0, loop1
+    0xfa000ce3L, // beq x0, x0, loop1
   )
 
   val loadCounter = RegInit(0.U(10.W))
@@ -67,21 +76,6 @@ class Top extends Module {
       instMem.io.write := true.B
     }
   }
-
-  // // Debug
-  // when (reset.asBool) {
-  //   instMem.io.addr := 0.U
-  //   instMem.io.writeData := 0x00002137.U // lui x2, 2
-  //   instMem.io.write := true.B
-  // } .elsewhen (RegNext(reset.asBool)) {
-  //   instMem.io.addr := 4.U
-  //   instMem.io.writeData := 0x00600093.U // addi x1, x0, 6
-  //   instMem.io.write := true.B
-  // } .elsewhen (RegNext(RegNext(reset.asBool))) {
-  //   instMem.io.addr := 8.U
-  //   instMem.io.writeData := 0x00112023.U // sw x1, 0(x2)
-  //   instMem.io.write := true.B
-  // }
 }
 
 object Top extends App {
