@@ -1,7 +1,7 @@
-li x1, 0      # loop index 
-li x2, 0x1000 # max loop
-li x3, 1      # LED on
-li x4, 0x2000 # LED address
+li x1, 0        # loop index 
+li x2, 0x6cf000 # max loop
+li x3, 1        # LED on
+li x4, 0x2000   # LED address
 
 loop1:
 addi x1, x1, 1
