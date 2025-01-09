@@ -1,0 +1,19 @@
+li x1, 0      # loop index 
+li x2, 0x1000 # max loop
+li x3, 1      # LED on
+li x4, 0x2000 # LED address
+
+loop1:
+addi x1, x1, 1
+blt x1, x2, loop1
+
+# turn on LED
+sw x3, 0(x4)
+
+loop2:
+sub x1, x1, x3
+blt x0, x1, loop2
+
+# turn on LED
+sw x0, 0(x4)
+beq x0, x0, loop1

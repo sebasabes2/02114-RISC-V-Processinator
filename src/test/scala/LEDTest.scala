@@ -6,11 +6,15 @@ class LEDTest extends AnyFlatSpec with ChiselScalatestTester {
   "Top" should "pass" in {
     test(new Top()) { dut =>
       dut.clock.step(10)
+
+      // Reset
       dut.reset.poke(true.B)
       dut.clock.step(1)
       dut.reset.poke(false.B)
       dut.clock.step(10)
-      dut.clock.step(1)
+
+      // Run
+      dut.clock.step(10)
       dut.io.led(1).expect(true.B)
     }
   }

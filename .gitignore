@@ -1,6 +1,9 @@
 *
 !.gitignore
 !build.sbt
+!Top.xdc
+
 !src/
 !src/**
-!Top.xdc
+!programs/
+!programs/**
