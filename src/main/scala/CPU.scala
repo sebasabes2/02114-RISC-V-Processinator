@@ -9,11 +9,13 @@ class CPU extends Module {
 
     // Only for testing
     val reg = Output(Vec(32, UInt(32.W)))
+    val PC = Output(UInt(32.W))
   })
 
   val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
   io.reg := reg
   val PC = RegInit(0.U(32.W))
+  io.PC := PC
 
   // Fetch
   io.inst.addr := PC
@@ -43,6 +45,7 @@ class CPU extends Module {
   val MemWB = WireDefault(false.B)
   val MemStore = WireDefault(false.B)
   val ALUmode = WireDefault(0.U(4.W))
+  val Bmode = WireDefault(false.B)
 
   switch (opcode) {
     is (Opcodes.add) {
@@ -68,7 +71,10 @@ class CPU extends Module {
       MemStore := true.B
     }
     is (Opcodes.branch) {
-      // complicated
+      operand1 := reg(rs1)
+      operand2 := reg(rs2)
+      ALUmode := funct3
+      Bmode := true.B
 
     }
     is (Opcodes.lui) {
@@ -86,6 +92,8 @@ class CPU extends Module {
   // Execute
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
+  val BranchOffset = RegNext(B_imm)
+  val BranchMode = RegNext(Bmode)
   val ALUResult = WireDefault(0.U(32.W))
   val ex_ALUmode = RegNext(ALUmode)
 
@@ -123,6 +131,33 @@ class CPU extends Module {
       ALUResult := op1 & op2
     }
   }
+
+  val BranchTaken = WireDefault(false.B)
+  switch(ex_ALUmode) {
+    is(0.U) {
+      BranchTaken := op1 === op2
+    }
+    is(1.U) {
+      BranchTaken := op1 =/= op2
+    }
+    is(4.U) {
+      BranchTaken := op1.asSInt < op2.asSInt
+    }
+    is(5.U) {
+      BranchTaken := op1.asSInt >= op2.asSInt
+    }
+    is(6.U) {
+      BranchTaken := op1 < op2
+    }
+    is(7.U) {
+      BranchTaken := op1 >= op2
+    }
+  }
+
+  when(BranchMode && BranchTaken){
+    PC := RegNext(RegNext(PC))+BranchOffset
+  }
+
 
   // Memory
   io.data.addr := RegNext(ALUResult)
