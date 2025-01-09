@@ -6,9 +6,13 @@ class CPU extends Module {
     val inst = new Bus()
     val data = new Bus()
     val debug = Output(Bool())
+
+    // Only for testing
+    val reg = Output(Vec(32, UInt(32.W)))
   })
 
   val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
+  io.reg := reg
   val PC = RegInit(0.U(32.W))
 
   // Fetch
