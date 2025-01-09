@@ -31,7 +31,7 @@ class CPU extends Module {
   val rs2 = (instruction(24,20)) //read register 2
   val funct7 = (instruction(31,25))
 
-  val I_imm = (instruction(31,20))
+  val I_imm = (instruction(31,20)) // only unsinged for now
   val S_imm = (instruction(31,25) ## instruction(11,7))
   val B_imm = (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
   val U_imm = (instruction(31,12) ## 0.U(12.W))
@@ -100,7 +100,7 @@ class CPU extends Module {
       ALUResult := op1 << op2(5,0)
     }
     is (2.U){
-      ALUResult := op1.asSInt < op2.asSInt
+      ALUResult := op1.asSInt < op2.asSInt //op2 is only unsinged for now
     }
     is (3.U){
       ALUResult := op1 < op2
