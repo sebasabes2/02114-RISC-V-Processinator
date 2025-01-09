@@ -39,8 +39,6 @@ class CPU extends Module {
   val MemWB = WireDefault(false.B)
   val MemStore = WireDefault(false.B)
   val ALUmode = WireDefault(0.U(4.W))
-  val destination = WireDefault(0.U(5.W))
-  val source = WireDefault(0.U(5.W))
 
   switch (opcode) {
     is (Opcodes.add) {
@@ -123,16 +121,16 @@ class CPU extends Module {
 
   // Memory
   io.data.addr := RegNext(ALUResult)
-  io.data.writeData := reg(RegNext(RegNext(source)))
+  io.data.writeData := reg(RegNext(RegNext(rs2)))
   io.data.write := RegNext(RegNext(MemStore))
 
   // Writeback
-  val wb_destination = RegNext(RegNext(RegNext(rd)))
-  when (wb_destination =/= 0.U) {
+  val destination = RegNext(RegNext(RegNext(rd)))
+  when (destination =/= 0.U) {
     when (RegNext(RegNext(RegNext(ALUWB)))) {
-      reg(wb_destination) := RegNext(RegNext(ALUResult))
+      reg(destination) := RegNext(RegNext(ALUResult))
     } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
-      reg(wb_destination) := io.data.readData
+      reg(destination) := io.data.readData
     }
   }
 
