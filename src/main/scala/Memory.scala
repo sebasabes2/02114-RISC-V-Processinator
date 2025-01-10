@@ -11,7 +11,7 @@ class Bus extends Bundle {
 
 class Memory(size: Int, start: Int) extends Module {
   val io = IO(Flipped(new Bus()))
-  val mem = SyncReadMem(size/4, UInt(32.W))
+  val mem = SyncReadMem(size/4, UInt(32.W)) //right shift?
   val width = log2Up(size)
   val page = io.addr(31,width)
   val index = io.addr(width - 1,2)
