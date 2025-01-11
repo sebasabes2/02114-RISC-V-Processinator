@@ -15,6 +15,13 @@ class Top extends Module {
   // Debug
   io.led := Seq.fill(16)(false.B)
   io.led(0) := CPU.io.debug
+
+  
+  when (reset.asBool) {
+    instMem.io.writeData := 0x07b00093.U
+    instMem.io.write := true.B
+    instMem.io.addr := 8.U
+  }
 }
 
 object Top extends App {

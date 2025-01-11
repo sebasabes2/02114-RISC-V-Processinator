@@ -23,9 +23,9 @@ class Memory(size: Int, start: Int) extends Module {
     mem.write(index, io.writeData)
   }
 
-  // Debug
-  when (reset.asBool) {
-    mem.write(0.U, 0x07b00093.U)
-  }
-  println("size, size/4, width, width-1, start/size", size, size/4, width, width-1, start/size)
+  // // Debug
+  // when (reset.asBool) {
+  //   mem.write(0.U, 0x07b00093.U)
+  // }
+  // println("size, size/4, width, width-1, start/size", size, size/4, width, width-1, start/size)
 }
