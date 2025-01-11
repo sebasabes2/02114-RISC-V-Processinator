@@ -1,7 +1,7 @@
 import chisel3._
 import chisel3.util._
 
-class LEDController(size: Int, start: Int) extends Module {
+class LEDController(start: Int, size: Int) extends Module {
   val io = IO(new Bundle {
     val bus = Flipped(new Bus())
     val led = Output(Vec(16, Bool()))
