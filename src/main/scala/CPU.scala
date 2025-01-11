@@ -37,7 +37,7 @@ class CPU extends Module {
   val S_imm = Fill(20, instruction(31)) ## instruction(31,25) ## instruction(11,7)
   val B_imm = Fill(19, instruction(31)) ## (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
   val U_imm = (instruction(31,12) ## 0.U(12.W))
-  val J_imm = Fill(12,instruction(31)) ## (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
+  val J_imm = Fill(11,instruction(31)) ## (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
 
   val operand1 = WireDefault(0.U(32.W))
   val operand2 = WireDefault(0.U(32.W))
