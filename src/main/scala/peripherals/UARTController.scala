@@ -32,16 +32,4 @@ class UARTController(start: Int, size: Int, freq: Int, baud: Int) extends Module
     uart.io.port.write := false.B
     uart.io.port.wrData := 0.U
   }
-
-
-  // REMOVE
-  // val led = RegInit(0.U(16.W))
-
-  // io.bus.readData := led
-  // io.bus.readValid := RegNext(page === (start/size).U)
-  // io.led := led.asBools
-
-  // when (io.bus.write && (page === (start/size).U)) {
-  //   led := io.bus.writeData
-  // }
 }
