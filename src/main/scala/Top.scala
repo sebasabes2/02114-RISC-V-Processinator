@@ -7,7 +7,7 @@ class Top extends Module {
   })
 
   val CPUreset = WireDefault(false.B) // Needed for FSM boot loader
-  val CPU = withReset(CPUreset) { Module(new CPU()) }
+  val CPU = withReset(RegNext(CPUreset)) { Module(new CPU()) }
   val instMem = Module(new Memory(0x1000, 0x0000))
   val dataMem = Module(new Memory(0x1000, 0x1000))
   val ledController = Module(new LEDController(0x1000, 0x2000))
@@ -51,7 +51,7 @@ class Top extends Module {
     0x00322023, // sw x3, 0(x4)
 
                 // loop 2:
-    0x403080b3, // sub x1, x1, x3
+    0xfff08093L, // addi x1, x1, -1
     0,
     0,
     0,

@@ -17,7 +17,7 @@ nop
 sw x3, 0(x4)
 
 loop2:
-sub x1, x1, x3
+addi x1, x1, -1
 nop
 nop
 nop
