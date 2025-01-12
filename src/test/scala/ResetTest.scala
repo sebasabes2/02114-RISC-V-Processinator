@@ -4,7 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 class ResetTest extends AnyFlatSpec with ChiselScalatestTester {
   "Top" should "pass" in {
-    test(new Top()) { dut =>
+    test(new Top(10, 1)) { dut =>
       //println("Led value (start): " + dut.io.led(0).peekBoolean())
       dut.reset.poke(true.B)
       dut.clock.step(1)
