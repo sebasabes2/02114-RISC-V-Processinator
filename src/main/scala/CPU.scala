@@ -193,9 +193,9 @@ class CPU extends Module {
 
   io.data.addr := RegNext(ALUResult)
   io.data.writeData := reg(RegNext(RegNext(rs2)))
-  io.data.writeWord := RegNext(RegNext(MemStore))
-  io.data.writeHalf := false.B
-  io.data.writeByte := false.B
+  io.data.writeByte := RegNext(RegNext(MemStore)) && (funct3_mem === 0.U)
+  io.data.writeHalf := RegNext(RegNext(MemStore)) && (funct3_mem === 1.U)
+  io.data.writeWord := RegNext(RegNext(MemStore)) && (funct3_mem === 2.U)
 
 
   // Writeback
