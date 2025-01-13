@@ -13,7 +13,14 @@ class SraiTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step(10)
       dut.io.reg(2).expect(30.U)
 
-      //test minus
+      dut.io.inst.readData.poke(0xf8500093L) //addi x1 x0 -123
+      dut.clock.step(10)
+      println("x3: "+ dut.io.reg(1).peekInt())
+
+      dut.io.inst.readData.poke(0x4020d193.U) //srli x2 x1 2
+      dut.clock.step(10)
+      println("x3: "+ dut.io.reg(2).peekInt())
+      dut.io.reg(2).expect(0xffffffe1L.U)
     }
   }
 }
