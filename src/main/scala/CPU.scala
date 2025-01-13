@@ -33,6 +33,8 @@ class CPU extends Module {
   val rs2 = (instruction(24,20)) //read register 2
   val funct7 = (instruction(31,25))
 
+
+
   val I_imm = Fill(20, instruction(31)) ## instruction(31,20)
   val S_imm = Fill(20, instruction(31)) ## instruction(31,25) ## instruction(11,7)
   val B_imm = Fill(19, instruction(31)) ## (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
@@ -112,6 +114,7 @@ class CPU extends Module {
   val jalOffset = RegNext(J_imm)
   val jalrOffset = RegNext(I_imm)
   val JumpMode = RegNext(Jmode)
+  val funct3_ex = RegNext(funct3)
 
   switch (ex_ALUmode(2,0)) {
     is (ALUModes.add) {
@@ -184,17 +187,39 @@ class CPU extends Module {
   }
 
   // Memory
+  val funct3_mem = RegNext(funct3_ex)
+
   io.data.addr := RegNext(ALUResult)
   io.data.writeData := reg(RegNext(RegNext(rs2)))
   io.data.write := RegNext(RegNext(MemStore))
 
   // Writeback
+  val funct3_wb = RegNext(funct3_mem)
+  val LoadToMem = WireDefault(0.U(32.W))
+  switch(funct3_wb){
+    is(0.U){
+      LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
+    }
+    is(1.U){
+      LoadToMem := Fill(16,io.data.readData(15)) ## io.data.readData(15,0)
+    }
+    is(2.U){
+      LoadToMem := io.data.readData
+    }
+    is(4.U){
+      LoadToMem := io.data.readData(7,0)
+    }
+    is(5.U){
+      LoadToMem := io.data.readData(15,0)
+    }
+  }
+
   val destination = RegNext(RegNext(RegNext(rd)))
   when (destination =/= 0.U) {
     when (RegNext(RegNext(RegNext(ALUWB)))) {
       reg(destination) := RegNext(RegNext(ALUResult))
     } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
-      reg(destination) := io.data.readData
+      reg(destination) := LoadToMem
     }
   }
 
