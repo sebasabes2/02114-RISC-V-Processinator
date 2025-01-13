@@ -59,7 +59,8 @@ class CPU extends Module {
       operand1 := reg(rs1)
       operand2 := I_imm
       ALUWB := true.B
-      ALUmode := funct3 //(missing) if srli check for func7
+      val artithmeticToggle = Mux(funct3 === ALUModes.shiftRight, funct7(5), 0.U(1.W))
+      ALUmode := artithmeticToggle ## funct3
     }
     is (Opcodes.load) {
       operand1 := reg(rs1)
@@ -113,36 +114,36 @@ class CPU extends Module {
   val JumpMode = RegNext(Jmode)
 
   switch (ex_ALUmode(2,0)) {
-    is (0.U) {
+    is (ALUModes.add) {
       when (ex_ALUmode(3)) {
         ALUResult := op1 - op2
       } .otherwise {
         ALUResult := op1 + op2
       }
     }
-    is (1.U){
+    is (ALUModes.shiftLeft){
       ALUResult := op1 << op2(5,0)
     }
-    is (2.U){
-      ALUResult := (op1.asSInt < op2.asSInt).asUInt() //(missing) op2 is only unsinged for now
+    is (ALUModes.setLessThan){
+      ALUResult := (op1.asSInt < op2.asSInt).asUInt()
     }
-    is (3.U){
+    is (ALUModes.setLessThanU){
       ALUResult := (op1 < op2)
     }
-    is (4.U){
+    is (ALUModes.xor){
       ALUResult := op1 ^ op2
     }
-    is (5.U){ //check if SInt is on srl or sra
+    is (ALUModes.shiftRight){ //check if SInt is on srl or sra
       when (ex_ALUmode(3)) { //sra
         ALUResult := op1 >> op2(5,0) //check if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
       } .otherwise { //srl
         ALUResult := (op1.asSInt >> op2(5,0)).asUInt()
       }
     }
-    is (6.U){
+    is (ALUModes.or){
       ALUResult := op1 | op2
     }
-    is (7.U){
+    is (ALUModes.and){
       ALUResult := op1 & op2
     }
   }
@@ -170,7 +171,7 @@ class CPU extends Module {
   }
 
   when(BranchMode && BranchTaken){
-    PC := RegNext(RegNext(PC))+BranchOffset.asUInt // asUint???
+    PC := RegNext(RegNext(PC))+BranchOffset
   }
 
   switch(JumpMode){

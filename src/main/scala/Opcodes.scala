@@ -2,14 +2,25 @@ import chisel3._
 import chisel3.util._
 
 object Opcodes{
-  val add    = 51.U
-  val addi   = 19.U
-  val load   = 3.U
-  val store  = 35.U
-  val branch = 99.U
-  val jal    = 111.U
-  val jalr   = 103.U
-  val lui    = 55.U
-  val auipc  = 23.U
-  val ecall  = 115.U
+  val add    = "b0110011".U
+  val addi   = "b0010011".U
+  val load   = "b0000011".U
+  val store  = "b0100011".U
+  val branch = "b1100011".U
+  val jal    = "b1101111".U
+  val jalr   = "b1100111".U
+  val lui    = "b0110111".U
+  val auipc  = "b0010111".U
+  val ecall  = "b1110011".U
+}
+
+object ALUModes {
+  val add = 0x0.U
+  val xor = 0x4.U
+  val or = 0x6.U
+  val and = 0x7.U
+  val shiftLeft = 0x1.U
+  val shiftRight = 0x5.U
+  val setLessThan = 0x2.U
+  val setLessThanU = 0x3.U
 }
