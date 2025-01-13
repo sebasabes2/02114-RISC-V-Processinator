@@ -17,7 +17,7 @@ class StoreWordTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step(1)
       dut.io.data.addr.expect(10.U)
       dut.io.data.writeData.expect(89.U)
-      dut.io.data.write.expect(true.B)
+      dut.io.data.writeWord.expect(true.B)
     }
   }
 }

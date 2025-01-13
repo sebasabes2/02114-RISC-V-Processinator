@@ -19,7 +19,9 @@ class CPU extends Module {
 
   // Fetch
   io.inst.addr := PC
-  io.inst.write := false.B
+  io.inst.writeWord := false.B
+  io.inst.writeHalf := false.B
+  io.inst.writeByte := false.B
   io.inst.writeData := 0.U
   PC := PC + 4.U
 
@@ -191,7 +193,10 @@ class CPU extends Module {
 
   io.data.addr := RegNext(ALUResult)
   io.data.writeData := reg(RegNext(RegNext(rs2)))
-  io.data.write := RegNext(RegNext(MemStore))
+  io.data.writeWord := RegNext(RegNext(MemStore))
+  io.data.writeHalf := false.B
+  io.data.writeByte := false.B
+
 
   // Writeback
   val funct3_wb = RegNext(funct3_mem)

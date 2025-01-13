@@ -10,13 +10,24 @@ class LEDController(start: Int, size: Int) extends Module {
   val width = log2Up(size)
   val page = io.bus.addr(31,width)
 
-  val led = RegInit(0.U(16.W))
+  val led0 = RegInit(0.U(8.W))
+  val led1 = RegInit(0.U(8.W))
 
-  io.bus.readData := led
+  io.bus.readData := led1 ## led0
   io.bus.readValid := RegNext(page === (start/size).U)
-  io.led := led.asBools
+  io.led := (led1 ## led0).asBools
 
-  when (io.bus.write && (page === (start/size).U)) {
-    led := io.bus.writeData
+  // Write
+  when (page === (start/size).U) {
+    when (io.bus.writeWord || io.bus.writeHalf) {
+      led0 := io.bus.writeData(7,0)
+      led1 := io.bus.writeData(15,8)
+    } .elsewhen(io.bus.writeByte) {
+      when (io.bus.addr(0)) {
+        led1 := io.bus.writeData(7,0)
+      } .otherwise {
+        led0 := io.bus.writeData(7,0)
+      }
+    }
   }
 }
