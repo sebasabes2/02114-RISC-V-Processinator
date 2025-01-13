@@ -9,7 +9,7 @@ class Bus extends Bundle {
   val write = Output(Bool())
 }
 
-class Memory(size: Int, start: Int) extends Module {
+class Memory(start: Int, size: Int) extends Module {
   val io = IO(Flipped(new Bus()))
   val mem = SyncReadMem(size/4, UInt(32.W)) //right shift?
   val width = log2Up(size)

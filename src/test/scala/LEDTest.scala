@@ -4,7 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 class LEDTest extends AnyFlatSpec with ChiselScalatestTester {
   "Top" should "pass" in {
-    test(new Top()) { dut =>
+    test(new Top(10, 1)) { dut =>
       dut.clock.step(10)
 
       // Reset
