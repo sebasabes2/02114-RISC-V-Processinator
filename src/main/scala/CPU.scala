@@ -133,11 +133,11 @@ class CPU extends Module {
     is (ALUModes.xor){
       ALUResult := op1 ^ op2
     }
-    is (ALUModes.shiftRight){ //check if SInt is on srl or sra
+    is (ALUModes.shiftRight){
       when (ex_ALUmode(3)) { //sra
-        ALUResult := op1 >> op2(5,0) //check if 5,0 or 4,0. (4,0 >> 31x ikke 32x)
+        ALUResult := (op1.asSInt >> op2(4,0)).asUInt()
       } .otherwise { //srl
-        ALUResult := (op1.asSInt >> op2(5,0)).asUInt()
+        ALUResult := op1 >> op2(4,0)
       }
     }
     is (ALUModes.or){
