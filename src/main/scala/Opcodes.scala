@@ -8,7 +8,7 @@ object Opcodes{
   val store  = 35.U
   val branch = 99.U
   val jal    = 111.U
-  val jalr   = 113.U
+  val jalr   = 103.U
   val lui    = 55.U
   val auipc  = 23.U
   val ecall  = 115.U

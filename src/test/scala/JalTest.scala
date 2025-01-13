@@ -30,6 +30,8 @@ class JalTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.PC.expect(68)
       dut.clock.step(1)
       dut.io.PC.expect(52)
+      dut.clock.step(3)
+      println("x3: "+ dut.io.reg(3).peekInt())
 
     }
   }
