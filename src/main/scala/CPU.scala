@@ -46,6 +46,7 @@ class CPU extends Module {
   val MemStore = WireDefault(false.B)
   val ALUmode = WireDefault(0.U(4.W))
   val Bmode = WireDefault(false.B)
+  val Jmode = WireDefault(0.U(2.W))
 
   switch (opcode) {
     is (Opcodes.add) {
@@ -75,7 +76,6 @@ class CPU extends Module {
       operand2 := reg(rs2)
       ALUmode := funct3
       Bmode := true.B
-
     }
     is (Opcodes.lui) {
       operand1 := U_imm
@@ -87,6 +87,18 @@ class CPU extends Module {
       operand2 := PC
       ALUWB := true.B
     }
+    is (Opcodes.jal){
+      operand1 := RegNext(PC)
+      operand2 := 4.U
+      ALUWB := true.B
+      Jmode := 1.U
+    }
+    is (Opcodes.jalr){
+      operand1 := RegNext(PC)
+      operand2 := 4.U
+      ALUWB := true.B
+      Jmode := 2.U
+    }
   }
 
   // Execute
@@ -96,6 +108,9 @@ class CPU extends Module {
   val BranchMode = RegNext(Bmode)
   val ALUResult = WireDefault(0.U(32.W))
   val ex_ALUmode = RegNext(ALUmode)
+  val jalOffset = RegNext(J_imm)
+  val jalrOffset = RegNext(I_imm)
+  val JumpMode = RegNext(Jmode)
 
   switch (ex_ALUmode(2,0)) {
     is (0.U) {
@@ -155,9 +170,17 @@ class CPU extends Module {
   }
 
   when(BranchMode && BranchTaken){
-    PC := RegNext(RegNext(PC))+BranchOffset.asUInt
+    PC := RegNext(RegNext(PC))+BranchOffset.asUInt // asUint???
   }
 
+  switch(JumpMode){
+    is(1.U){
+      PC := RegNext(RegNext(PC))+jalOffset
+    }
+    is(2.U){
+      PC := reg(RegNext(rs1))+jalrOffset
+    }
+  }
 
   // Memory
   io.data.addr := RegNext(ALUResult)
