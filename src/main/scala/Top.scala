@@ -42,7 +42,7 @@ class Top(freq: Int, baud: Int) extends Module {
   when (bootLoader.io.write) {
     instMem.io.addr := bootLoader.io.addr
     instMem.io.writeData := bootLoader.io.writeData
-    instMem.io.write := true.B
+    instMem.io.writeWord := true.B
   }
   when (bootLoader.io.loading) {
     CPUreset := true.B
