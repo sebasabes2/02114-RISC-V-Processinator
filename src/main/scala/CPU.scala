@@ -14,16 +14,17 @@ class CPU extends Module {
 
   val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
   io.reg := reg
-  val PC = RegInit(0.U(32.W))
-  io.PC := PC
+  val PC = RegInit(0xfffffffcL.U(32.W))
+  val newPC = WireDefault(PC + 4.U)
+  io.PC := newPC
 
   // Fetch
-  io.inst.addr := PC
+  io.inst.addr := newPC
   io.inst.writeWord := false.B
   io.inst.writeHalf := false.B
   io.inst.writeByte := false.B
   io.inst.writeData := 0.U
-  PC := PC + 4.U
+  PC := newPC
 
   // Decode
   val instruction = io.inst.readData
@@ -93,13 +94,13 @@ class CPU extends Module {
       ALUWB := true.B
     }
     is (Opcodes.jal){
-      operand1 := RegNext(PC)
+      operand1 := PC
       operand2 := 4.U
       ALUWB := true.B
       Jmode := 1.U
     }
     is (Opcodes.jalr){
-      operand1 := RegNext(PC)
+      operand1 := PC
       operand2 := 4.U
       ALUWB := true.B
       Jmode := 2.U
@@ -176,15 +177,15 @@ class CPU extends Module {
   }
 
   when(BranchMode && BranchTaken){
-    PC := RegNext(RegNext(PC))+BranchOffset
+    newPC := RegNext(PC)+BranchOffset
   }
 
   switch(JumpMode){
     is(1.U){
-      PC := RegNext(RegNext(PC))+jalOffset
+      newPC := RegNext(PC)+jalOffset
     }
     is(2.U){
-      PC := reg(RegNext(rs1))+jalrOffset
+      newPC := reg(RegNext(rs1))+jalrOffset
     }
   }
 
