@@ -18,10 +18,10 @@ class BeqTest extends AnyFlatSpec with ChiselScalatestTester {
         0x00100313, //addi x6 x0 1
       )
       RunProgram(dut,array)
-      for (i <- 1 until 4){
+      for (i <- 1 to 3){
         dut.io.reg(i).expect(0)
       }
-      for (i <-4 until 7){
+      for (i <-4 to 6){
         dut.io.reg(i).expect(1)
       }
     }
