@@ -115,15 +115,22 @@ class CPU extends Module {
     }
   }
 
-  val forwardA = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
-  val forwardB = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+  //ex
+  val ex_forwardA = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
+  val ex_forwardB = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+
+  //Mem-WB
+  val mem_forwardA = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
+  val mem_forwardB = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
 
   // ALUResult belongs to Execute stage
   val ALUResult = WireDefault(0.U(32.W))
-  when (forwardA) {
+  //LoadToMem belongs to Mem-WB stage
+  val LoadToMem = WireDefault(0.U(32.W))
+  when (ex_forwardA) {
     operand1 := ALUResult
   }
-  when (forwardB) {
+  when (ex_forwardB) {
     operand2 := ALUResult
   }
 
@@ -144,6 +151,12 @@ class CPU extends Module {
   // when (forwardB) {
   //   op2 := RegNext(ALUResult)
   // }
+   when (mem_forwardA) {
+     op1 := LoadToMem
+   }
+   when (mem_forwardB) {
+     op2 := LoadToMem
+   }
 
   switch (ex_ALUmode(2,0)) {
     is (ALUModes.add) {
@@ -227,7 +240,6 @@ class CPU extends Module {
 
   // Writeback
   val funct3_wb = RegNext(funct3_mem)
-  val LoadToMem = WireDefault(0.U(32.W))
   switch(funct3_wb){
     is(0.U){
       LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
