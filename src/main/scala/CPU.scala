@@ -5,15 +5,19 @@ class CPU extends Module {
   val io = IO(new Bundle {
     val inst = new Bus()
     val data = new Bus()
-    val debug = Output(Bool())
 
     // Only for testing
     val reg = Output(Vec(32, UInt(32.W)))
     val PC = Output(UInt(32.W))
   })
 
+  // GP-Registers
   val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
-  io.reg := reg
+  val newReg = WireDefault(reg)
+  reg := newReg
+  io.reg := newReg
+
+  // PC
   val PC = RegInit(0xfffffffcL.U(32.W))
   val newPC = WireDefault(PC + 4.U)
   io.PC := newPC
@@ -56,15 +60,15 @@ class CPU extends Module {
 
   switch (opcode) {
     is (Opcodes.add) {
-      operand1 := reg(rs1)
-      operand2 := reg(rs2)
+      operand1 := newReg(rs1)
+      operand2 := newReg(rs2)
       ALUWB := true.B
       ALUmode := funct7(5) ## funct3
       useRs1 := true.B
       useRs2 := true.B
     }
     is (Opcodes.addi) {
-      operand1 := reg(rs1)
+      operand1 := newReg(rs1)
       operand2 := I_imm
       ALUWB := true.B
       val artithmeticToggle = Mux(funct3 === ALUModes.shiftRight, funct7(5), 0.U(1.W))
@@ -72,20 +76,20 @@ class CPU extends Module {
       useRs1 := true.B
     }
     is (Opcodes.load) {
-      operand1 := reg(rs1)
+      operand1 := newReg(rs1)
       operand2 := I_imm
       MemWB := true.B
       useRs1 := true.B
     }
     is (Opcodes.store) {
-      operand1 := reg(rs1)
+      operand1 := newReg(rs1)
       operand2 := S_imm
       MemStore := true.B
       useRs1 := true.B
     }
     is (Opcodes.branch) {
-      operand1 := reg(rs1)
-      operand2 := reg(rs2)
+      operand1 := newReg(rs1)
+      operand2 := newReg(rs2)
       ALUmode := funct3
       Bmode := true.B
       useRs1 := true.B
@@ -211,24 +215,24 @@ class CPU extends Module {
       newPC := RegNext(PC)+jalOffset
     }
     is(2.U){
-      newPC := reg(RegNext(rs1))+jalrOffset
+      newPC := newReg(RegNext(rs1))+jalrOffset
     }
   }
 
-  // Memory
+  // Memory (Execute continue)
   val funct3_mem = RegNext(funct3_ex)
 
-  io.data.addr := RegNext(ALUResult)
-  io.data.writeData := reg(RegNext(RegNext(rs2)))
-  io.data.writeByte := RegNext(RegNext(MemStore)) && (funct3_mem === 0.U)
-  io.data.writeHalf := RegNext(RegNext(MemStore)) && (funct3_mem === 1.U)
-  io.data.writeWord := RegNext(RegNext(MemStore)) && (funct3_mem === 2.U)
+  io.data.addr := ALUResult
+  io.data.writeData := newReg(RegNext(rs2))
+  io.data.writeByte := RegNext(MemStore) && (funct3_ex === 0.U)
+  io.data.writeHalf := RegNext(MemStore) && (funct3_ex === 1.U)
+  io.data.writeWord := RegNext(MemStore) && (funct3_ex === 2.U)
 
 
-  // Writeback
-  val funct3_wb = RegNext(funct3_mem)
+  // Memory/Writeback
+  // val funct3_wb = RegNext(funct3_mem)
   val LoadToMem = WireDefault(0.U(32.W))
-  switch(funct3_wb){
+  switch(funct3_mem){
     is(0.U){
       LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
     }
@@ -246,15 +250,12 @@ class CPU extends Module {
     }
   }
 
-  val destination = RegNext(RegNext(RegNext(rd)))
+  val destination = RegNext(RegNext(rd))
   when (destination =/= 0.U) {
-    when (RegNext(RegNext(RegNext(ALUWB)))) {
-      reg(destination) := RegNext(RegNext(ALUResult))
-    } .elsewhen (RegNext(RegNext(RegNext(MemWB)))) {
-      reg(destination) := LoadToMem
+    when (RegNext(RegNext(ALUWB))) {
+      newReg(destination) := RegNext(ALUResult)
+    } .elsewhen (RegNext(RegNext(MemWB))) {
+      newReg(destination) := LoadToMem
     }
   }
-
-  // Debug
-  io.debug := reg(1.U) === 123.U
 }
