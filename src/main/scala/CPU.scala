@@ -36,8 +36,6 @@ class CPU extends Module {
   val rs2 = (instruction(24,20)) //read register 2
   val funct7 = (instruction(31,25))
 
-
-
   val I_imm = Fill(20, instruction(31)) ## instruction(31,20)
   val S_imm = Fill(20, instruction(31)) ## instruction(31,25) ## instruction(11,7)
   val B_imm = Fill(19, instruction(31)) ## (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
@@ -53,12 +51,17 @@ class CPU extends Module {
   val Bmode = WireDefault(false.B)
   val Jmode = WireDefault(0.U(2.W))
 
+  val useRs1 = WireDefault(false.B)
+  val useRs2 = WireDefault(false.B)
+
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := reg(rs1)
       operand2 := reg(rs2)
       ALUWB := true.B
       ALUmode := funct7(5) ## funct3
+      useRs1 := true.B
+      useRs2 := true.B
     }
     is (Opcodes.addi) {
       operand1 := reg(rs1)
@@ -66,22 +69,27 @@ class CPU extends Module {
       ALUWB := true.B
       val artithmeticToggle = Mux(funct3 === ALUModes.shiftRight, funct7(5), 0.U(1.W))
       ALUmode := artithmeticToggle ## funct3
+      useRs1 := true.B
     }
     is (Opcodes.load) {
       operand1 := reg(rs1)
       operand2 := I_imm
       MemWB := true.B
+      useRs1 := true.B
     }
     is (Opcodes.store) {
       operand1 := reg(rs1)
       operand2 := S_imm
       MemStore := true.B
+      useRs1 := true.B
     }
     is (Opcodes.branch) {
       operand1 := reg(rs1)
       operand2 := reg(rs2)
       ALUmode := funct3
       Bmode := true.B
+      useRs1 := true.B
+      useRs2 := true.B
     }
     is (Opcodes.lui) {
       operand1 := U_imm
@@ -107,17 +115,35 @@ class CPU extends Module {
     }
   }
 
+  val forwardA = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
+  val forwardB = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+
+  // ALUResult belongs to Execute stage
+  val ALUResult = WireDefault(0.U(32.W))
+  when (forwardA) {
+    operand1 := ALUResult
+  }
+  when (forwardB) {
+    operand2 := ALUResult
+  }
+
   // Execute
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
   val BranchOffset = RegNext(B_imm)
   val BranchMode = RegNext(Bmode)
-  val ALUResult = WireDefault(0.U(32.W))
   val ex_ALUmode = RegNext(ALUmode)
   val jalOffset = RegNext(J_imm)
   val jalrOffset = RegNext(I_imm)
   val JumpMode = RegNext(Jmode)
   val funct3_ex = RegNext(funct3)
+
+  // when (forwardA) {
+  //   op1 := RegNext(ALUResult)
+  // }
+  // when (forwardB) {
+  //   op2 := RegNext(ALUResult)
+  // }
 
   switch (ex_ALUmode(2,0)) {
     is (ALUModes.add) {
