@@ -13,8 +13,14 @@ class LEDController(start: Int, size: Int) extends Module {
   val led0 = RegInit(0.U(8.W))
   val led1 = RegInit(0.U(8.W))
 
-  io.bus.readData := led1 ## led0
-  io.bus.readValid := RegNext(page === (start/size).U)
+  val valid = RegNext(page === (start/size).U)
+  when (valid) {
+    io.bus.readData := led1 ## led0
+  } .otherwise {
+    io.bus.readData := 0.U
+  }
+  
+  io.bus.readValid := valid
   io.led := (led1 ## led0).asBools
 
   // Write

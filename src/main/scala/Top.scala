@@ -19,15 +19,7 @@ class Top(freq: Int, baud: Int) extends Module {
   led.io.bus <> CPU.io.data
   uart.io.bus <> CPU.io.data
 
-  when (dataMem.io.readValid) {
-    CPU.io.data.readData := dataMem.io.readData
-  } .elsewhen (led.io.bus.readValid) {
-    CPU.io.data.readData := led.io.bus.readData
-  } .elsewhen (uart.io.bus.readValid) {
-    CPU.io.data.readData := uart.io.bus.readData
-  } .otherwise {
-    CPU.io.data.readData := 0.U
-  }
+  CPU.io.data.readData := dataMem.io.readData | led.io.bus.readData | uart.io.bus.readData
 
   io.led := led.io.led
   uart.io.rx := io.rx
