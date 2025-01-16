@@ -135,6 +135,14 @@ class CPU extends Module {
     newPC := PC
   }
 
+  val BranchTaken = WireDefault(false.B)
+  when(RegNext(Bmode) && BranchTaken){
+    ALUWB := false.B
+    MemWB := false.B
+    MemStore := false.B
+    Bmode := false.B
+  }
+
   // ALUResult belongs to Execute stage
   val ALUResult = WireDefault(0.U(32.W))
   //LoadToMem belongs to Mem-WB stage
@@ -206,7 +214,7 @@ class CPU extends Module {
     }
   }
 
-  val BranchTaken = WireDefault(false.B)
+
   switch(ex_ALUmode) {
     is(0.U) {
       BranchTaken := op1 === op2
