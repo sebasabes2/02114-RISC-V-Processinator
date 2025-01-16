@@ -58,6 +58,9 @@ class CPU extends Module {
   val useRs1 = WireDefault(false.B)
   val useRs2 = WireDefault(false.B)
 
+  val jumpAddress = WireDefault(0.U(32.W))
+  val doJump = WireDefault(false.B)
+
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := newReg(rs1)
@@ -94,6 +97,8 @@ class CPU extends Module {
       Bmode := true.B
       useRs1 := true.B
       useRs2 := true.B
+      // Test
+      jumpAddress := PC + B_imm
     }
     is (Opcodes.lui) {
       operand1 := U_imm
@@ -110,12 +115,16 @@ class CPU extends Module {
       operand2 := 4.U
       ALUWB := true.B
       Jmode := 1.U
+      jumpAddress := PC + J_imm
+      doJump := true.B
     }
     is (Opcodes.jalr){
       operand1 := PC
       operand2 := 4.U
       ALUWB := true.B
       Jmode := 2.U
+      jumpAddress := newReg(rs1) + I_imm
+      doJump := true.B
     }
   }
 
@@ -228,24 +237,15 @@ class CPU extends Module {
     }
   }
 
-  when(BranchMode && BranchTaken){
-    newPC := RegNext(PC)+BranchOffset
-  }
-
-  switch(JumpMode){
-    is(1.U){
-      newPC := RegNext(PC)+jalOffset
-    }
-    is(2.U){
-      newPC := RegNext(newReg(rs1))+jalrOffset
-    }
+  when ((BranchMode && BranchTaken) || RegNext(doJump)) {
+    newPC := RegNext(jumpAddress)
   }
 
   // Memory (Execute continue)
   val funct3_mem = RegNext(funct3_ex)
 
   io.data.addr := ALUResult
-  io.data.writeData := newReg(RegNext(rs2))
+  io.data.writeData := RegNext(newReg(rs2))
   io.data.writeByte := RegNext(MemStore) && (funct3_ex === 0.U)
   io.data.writeHalf := RegNext(MemStore) && (funct3_ex === 1.U)
   io.data.writeWord := RegNext(MemStore) && (funct3_ex === 2.U)
