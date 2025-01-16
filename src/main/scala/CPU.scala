@@ -237,7 +237,7 @@ class CPU extends Module {
       newPC := RegNext(PC)+jalOffset
     }
     is(2.U){
-      newPC := newReg(RegNext(rs1))+jalrOffset
+      newPC := RegNext(newReg(rs1))+jalrOffset
     }
   }
 
