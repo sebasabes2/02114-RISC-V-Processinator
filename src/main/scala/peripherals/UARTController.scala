@@ -22,8 +22,13 @@ class UARTController(start: Int, size: Int, freq: Int, baud: Int) extends Module
   uart.io.port.read := page === (start/size).U
   uart.io.port.addr := index
 
-  io.bus.readData := uart.io.port.rdData
-  io.bus.readValid := RegNext(page === (start/size).U)
+  val valid = RegNext(page === (start/size).U)
+  when (valid) {
+    io.bus.readData := uart.io.port.rdData
+  } .otherwise {
+    io.bus.readData := 0.U
+  }
+  io.bus.readValid := valid
 
   val write = io.bus.writeWord | io.bus.writeHalf | io.bus.writeByte
   when (write && (page === (start/size).U)) {
