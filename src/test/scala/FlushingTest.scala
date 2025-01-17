@@ -12,17 +12,16 @@ class FlushingTest extends AnyFlatSpec with ChiselScalatestTester {
         0x00100113, // addi x2, x0, 1
         0x00100193, // addi x3, x0, 1
 
-                   // first:
+                    // first:
         0x0100006f, // jal x0, second
         
         0x00100213, // addi x4, x0, 1
         0x00100293, // addi x5, x0, 1
         0x00100313, // addi x6, x0, 1
 
-                   // second
+                    // second
         0x00000f97, // auipc x31, 0
-        0, // This is a problem
-        0x018f8067, // jalr x0, 20(x31)
+        0x014f8067, // jalr x0, 20(x31)
 
         0x00100393, // addi x7, x0, 1
         0x00100413, // addi x8, x0, 1
