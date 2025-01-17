@@ -129,14 +129,15 @@ class CPU extends Module {
   }
 
   //ex
-  val ex_forwardA = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
-  val ex_forwardB = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+  val ex_forwardA = (RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1) && useRs1)
+  val ex_forwardB = (RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2) && useRs2)
 
   //Mem-WB
-  val mem_forwardA = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
-  val mem_forwardB = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+  val mem_forwardA = (RegNext(MemWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1) && useRs1)
+  val mem_forwardB = (RegNext(MemWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2) && useRs2)
+  val mem_forward = mem_forwardA || mem_forwardB
 
-  when(mem_forwardA || mem_forwardB){
+  when(mem_forward){
     ALUWB := false.B
     MemWB := false.B
     MemStore := false.B
@@ -145,7 +146,9 @@ class CPU extends Module {
   }
 
   val BranchTaken = WireDefault(false.B)
-  when(RegNext(Bmode) && BranchTaken){
+  val flushing = WireDefault(false.B)
+  // when(RegNext(Bmode) && BranchTaken){
+  when (flushing) {
     ALUWB := false.B
     MemWB := false.B
     MemStore := false.B
@@ -247,6 +250,7 @@ class CPU extends Module {
 
   when ((BranchMode && BranchTaken) || RegNext(doJump)) {
     newPC := RegNext(jumpAddress)
+    flushing := true.B
   }
 
   // Memory (Execute continue)
