@@ -128,6 +128,7 @@ class CPU extends Module {
       } .otherwise {
         jumpAddress := newReg(rs1) + I_imm
       }
+      useRs1 := true.B
       doJump := true.B
     }
   }
@@ -241,7 +242,7 @@ class CPU extends Module {
   val funct3_mem = RegNext(funct3_ex)
 
   io.data.addr := ALUResult
-  io.data.writeData := RegNext(newReg(rs2))
+  io.data.writeData := newReg(RegNext(rs2))
   io.data.writeByte := RegNext(MemStore) && (funct3_ex === 0.U)
   io.data.writeHalf := RegNext(MemStore) && (funct3_ex === 1.U)
   io.data.writeWord := RegNext(MemStore) && (funct3_ex === 2.U)
