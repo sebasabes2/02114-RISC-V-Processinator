@@ -6,6 +6,7 @@ class Top(freq: Int, baud: Int) extends Module {
     val led = Output(Vec(16, Bool()))
     val rx = Input(Bool())
     val tx = Output(Bool())
+    val btn = Input(Vec(4, Bool()))
   })
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
@@ -14,16 +15,20 @@ class Top(freq: Int, baud: Int) extends Module {
   val dataMem = Module(new Memory(0x1000, 0x1000))
   val led = withReset(RegNext(CPUreset)) { Module(new LEDController(0x2000, 0x1000)) }
   val uart = withReset(RegNext(CPUreset)) { Module(new UARTController(0x3000, 0x1000, freq, baud)) }
+  val buttons = withReset(RegNext(CPUreset)) { Module(new ButtonController(0x4000,0x1000)) }
   instMem.io <> CPU.io.inst
   dataMem.io <> CPU.io.data
   led.io.bus <> CPU.io.data
   uart.io.bus <> CPU.io.data
+  buttons.io.bus <> CPU.io.data
 
-  CPU.io.data.readData := dataMem.io.readData | led.io.bus.readData | uart.io.bus.readData
+  CPU.io.data.readData := dataMem.io.readData | led.io.bus.readData | uart.io.bus.readData | buttons.io.bus.readData
 
   io.led := led.io.led
   uart.io.rx := io.rx
   io.tx := uart.io.tx
+
+  buttons.io.btn := io.btn
 
   // Boot loader
   val bootLoaderUart = Module(new WordUart(freq, baud))

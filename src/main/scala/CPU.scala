@@ -61,6 +61,9 @@ class CPU extends Module {
   val jumpAddress = WireDefault(0.U(32.W))
   val doJump = WireDefault(false.B)
 
+  // ALUResult belongs to Execute stage
+  val ALUResult = WireDefault(0.U(32.W))
+
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := newReg(rs1)
@@ -123,7 +126,11 @@ class CPU extends Module {
       operand2 := 4.U
       ALUWB := true.B
       Jmode := 2.U
-      jumpAddress := newReg(rs1) + I_imm
+      when(RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1)){
+        jumpAddress := ALUResult + I_imm
+      }.otherwise{
+        jumpAddress := newReg(rs1) + I_imm
+      }
       doJump := true.B
     }
   }
@@ -152,8 +159,7 @@ class CPU extends Module {
     Bmode := false.B
   }
 
-  // ALUResult belongs to Execute stage
-  val ALUResult = WireDefault(0.U(32.W))
+
   //LoadToMem belongs to Mem-WB stage
   val LoadToMem = WireDefault(0.U(32.W))
   when (ex_forwardA) {
@@ -261,20 +267,21 @@ class CPU extends Module {
 
   // Memory/Writeback
   // val funct3_wb = RegNext(funct3_mem)
+
   switch(funct3_mem){
-    is(0.U){
+    is(0.U){ //byte
       LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
     }
-    is(1.U){
+    is(1.U){//half
       LoadToMem := Fill(16,io.data.readData(15)) ## io.data.readData(15,0)
     }
-    is(2.U){
+    is(2.U){ //word
       LoadToMem := io.data.readData
     }
-    is(4.U){
+    is(4.U){ //byte (U)
       LoadToMem := io.data.readData(7,0)
     }
-    is(5.U){
+    is(5.U){ //half (U)
       LoadToMem := io.data.readData(15,0)
     }
   }
