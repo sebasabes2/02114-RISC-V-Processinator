@@ -46,23 +46,23 @@ class CPU extends Module {
   val U_imm = (instruction(31,12) ## 0.U(12.W))
   val J_imm = Fill(11,instruction(31)) ## (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
 
-  val operand1 = WireDefault(0.U(32.W))
-  val operand2 = WireDefault(0.U(32.W))
+  val operand1 = WireInit(UInt(32.W), DontCare)
+  val operand2 = WireInit(UInt(32.W), DontCare)
   val ALUWB = WireDefault(false.B)
   val MemWB = WireDefault(false.B)
   val MemStore = WireDefault(false.B)
   val ALUmode = WireDefault(0.U(4.W))
   val Bmode = WireDefault(false.B)
-  val Jmode = WireDefault(0.U(2.W))
 
   val useRs1 = WireDefault(false.B)
   val useRs2 = WireDefault(false.B)
 
-  val jumpAddress = WireDefault(0.U(32.W))
+  val jumpAddress = WireInit(UInt(32.W), DontCare)
   val doJump = WireDefault(false.B)
 
+  
   // ALUResult belongs to Execute stage
-  val ALUResult = WireDefault(0.U(32.W))
+  val ALUResult = WireInit(UInt(32.W), DontCare)
 
   switch (opcode) {
     is (Opcodes.add) {
@@ -100,7 +100,6 @@ class CPU extends Module {
       Bmode := true.B
       useRs1 := true.B
       useRs2 := true.B
-      // Test
       jumpAddress := PC + B_imm
     }
     is (Opcodes.lui) {
@@ -117,7 +116,6 @@ class CPU extends Module {
       operand1 := PC
       operand2 := 4.U
       ALUWB := true.B
-      Jmode := 1.U
       jumpAddress := PC + J_imm
       doJump := true.B
     }
@@ -125,10 +123,9 @@ class CPU extends Module {
       operand1 := PC
       operand2 := 4.U
       ALUWB := true.B
-      Jmode := 2.U
-      when(RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1)){
+      when (RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1)) {
         jumpAddress := ALUResult + I_imm
-      }.otherwise{
+      } .otherwise {
         jumpAddress := newReg(rs1) + I_imm
       }
       doJump := true.B
@@ -136,14 +133,15 @@ class CPU extends Module {
   }
 
   //ex
-  val ex_forwardA = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
-  val ex_forwardB = (RegNext(ALUWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+  val ex_forwardA = (RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1) && useRs1)
+  val ex_forwardB = (RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2) && useRs2)
 
   //Mem-WB
-  val mem_forwardA = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs1) & useRs1)
-  val mem_forwardB = (RegNext(MemWB) & (RegNext(rd) =/= 0.U) & (RegNext(rd) === rs2) & useRs2)
+  val mem_forwardA = (RegNext(MemWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1) && useRs1)
+  val mem_forwardB = (RegNext(MemWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2) && useRs2)
+  val mem_forward = mem_forwardA || mem_forwardB
 
-  when(mem_forwardA || mem_forwardB){
+  when(mem_forward){
     ALUWB := false.B
     MemWB := false.B
     MemStore := false.B
@@ -151,17 +149,14 @@ class CPU extends Module {
     newPC := PC
   }
 
-  val BranchTaken = WireDefault(false.B)
-  when(RegNext(Bmode) && BranchTaken){
+  val flushing = WireDefault(false.B)
+  when (flushing) {
     ALUWB := false.B
     MemWB := false.B
     MemStore := false.B
     Bmode := false.B
   }
 
-
-  //LoadToMem belongs to Mem-WB stage
-  val LoadToMem = WireDefault(0.U(32.W))
   when (ex_forwardA) {
     operand1 := ALUResult
   }
@@ -177,22 +172,7 @@ class CPU extends Module {
   val ex_ALUmode = RegNext(ALUmode)
   val jalOffset = RegNext(J_imm)
   val jalrOffset = RegNext(I_imm)
-  val JumpMode = RegNext(Jmode)
   val funct3_ex = RegNext(funct3)
-
-  // when (forwardA) {
-  //   op1 := RegNext(ALUResult)
-  // }
-  // when (forwardB) {
-  //   op2 := RegNext(ALUResult)
-  // }
-
-//   when (mem_forwardA) {
-//     op1 := LoadToMem
-//   }
-//   when (mem_forwardB) {
-//     op2 := LoadToMem
-//   }
 
   switch (ex_ALUmode(2,0)) {
     is (ALUModes.add) {
@@ -229,7 +209,8 @@ class CPU extends Module {
     }
   }
 
-
+  // val BranchTaken = WireDefault(false.B)
+  val BranchTaken = WireInit(Bool(), DontCare)
   switch(ex_ALUmode) {
     is(0.U) {
       BranchTaken := op1 === op2
@@ -253,6 +234,7 @@ class CPU extends Module {
 
   when ((BranchMode && BranchTaken) || RegNext(doJump)) {
     newPC := RegNext(jumpAddress)
+    flushing := true.B
   }
 
   // Memory (Execute continue)
@@ -267,7 +249,10 @@ class CPU extends Module {
 
   // Memory/Writeback
   // val funct3_wb = RegNext(funct3_mem)
-
+  
+  //LoadToMem belongs to Mem-WB stage
+  // val LoadToMem = WireDefault(0.U(32.W))
+  val LoadToMem = WireInit(UInt(32.W), DontCare)
   switch(funct3_mem){
     is(0.U){ //byte
       LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
