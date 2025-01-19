@@ -47,8 +47,10 @@ class Top(freq: Int, baud: Int) extends Module {
   when (bootLoader.io.loading) {
     CPUreset := true.B
   }
+  // Debug:
+  io.tx := bootLoaderUart.io.tx
 }
 
 object Top extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Top(100000000, 115200))
+  (new chisel3.stage.ChiselStage).emitVerilog(new Top(80000000, 115200))
 }

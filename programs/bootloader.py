@@ -56,7 +56,10 @@ def writeELF(ser, fileArray):
     if (name in ['.text', '.data']):
       print("Writing segment: " + name + " starting at address 0x" + '{:02X}'.format(addr))
       content = fileArray[secOffset : secOffset + secSize]
-      print(content)
+      # print(content)
+      missingBytes = (-len(content)) % 4
+      content += bytes(b'\x00'*missingBytes)
+      # print(len(content), content)
       writeBinary(ser, content, addr)
 
 

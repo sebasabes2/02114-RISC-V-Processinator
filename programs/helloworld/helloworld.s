@@ -3,7 +3,8 @@ string:
 .string "Hello, world!\n"
 
 .text
-la s0, string
+# la s0, string
+li s0, 0x1000
 li s1, 0x3000   # UART address
 
 loop:
