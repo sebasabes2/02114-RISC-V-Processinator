@@ -1,12 +1,14 @@
 import chisel3._
 import chisel3.util._
 
-class TopOld(freq: Int, baud: Int) extends Module {
-  val io = IO(new Bundle {
-    val led = Output(Vec(16, Bool()))
-    val rx = Input(Bool())
-    val tx = Output(Bool())
-  })
+class TopIO extends Bundle {
+  val led = Output(Vec(16, Bool()))
+  val rx = Input(Bool())
+  val tx = Output(Bool())
+}
+
+class TopSlow(freq: Int, baud: Int) extends Module {
+  val io = IO(new TopIO())
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
   val CPU = withReset(RegNext(CPUreset)) { Module(new CPU()) }
@@ -51,11 +53,7 @@ class clk_wiz_0 extends BlackBox {
 }
 
 class Top(freq: Int, baud: Int) extends Module {
-  val io = IO(new Bundle {
-    val led = Output(Vec(16, Bool()))
-    val rx = Input(Bool())
-    val tx = Output(Bool())
-  })
+  val io = IO(new TopIO())
 
   val wiz = Module(new clk_wiz_0)
   wiz.io.clk_in := clock
@@ -63,7 +61,7 @@ class Top(freq: Int, baud: Int) extends Module {
 
   withClock(wiz.io.clk_out) {
     val syncReset = RegNext(RegNext(RegNext(reset)))
-    val top = withReset(syncReset) { Module(new TopOld(freq, baud)) }
+    val top = withReset(syncReset) { Module(new TopSlow(freq, baud)) }
     io <> top.io
   }
 }
