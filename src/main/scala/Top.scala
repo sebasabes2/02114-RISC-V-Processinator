@@ -69,7 +69,7 @@ class Top(freq: Int, baud: Int) extends Module {
   // val clk = Reg(Bool())
   // clk := ~clk
   val wiz = Module(new clk_wiz_0)
-  wiz.io.reset := reset
+  wiz.io.reset := false.B
   wiz.io.clk_in := clock
   // val topSlow = withClockAndReset(wiz.io.clk_out, ~wiz.io.locked) { Module(new TopSlow(freq, baud)) }
   // io <> topSlow.io
@@ -87,8 +87,56 @@ class Top(freq: Int, baud: Int) extends Module {
 
 
 
-  val topSlow = withClockAndReset(wiz.io.clk_out, RegNext(RegNext(RegNext(~wiz.io.locked)))) { Module(new TopSlow(freq, baud)) }
-  io <> topSlow.io
+  // val reset_sync = RegInit(true.B)  
+  // withClockAndReset(wiz.io.clk_out,reset) {
+  //   // val topSlow = withClockAndReset(wiz.io.clk_out, reset_sync) { Module(new TopSlow(freq, baud)) }
+  //   // io <> topSlow.io
+
+  //   // Debug
+  //   val testBlink1 = RegInit(0.U(28.W))
+  //   val testBlink2 = Reg(UInt(28.W))
+  //   testBlink1 := testBlink1 + 1.U
+  //   when (testBlink1 === 80000000.U) {
+  //     testBlink1 := 0.U
+  //   }
+  //   io.led(12) := testBlink1 > 40000000.U
+  //   testBlink2 := testBlink2 + 1.U
+  //   when (testBlink2 === 80000000.U) {
+  //     testBlink2 := 0.U
+  //   }
+  //   io.led(11) := testBlink2 > 40000000.U
+
+  //   when (RegNext(reset_sync) === true.B) {
+  //     reset_sync := false.B
+  //   }
+  // }
+  // val topSlow = withClockAndReset(wiz.io.clk_out, reset_sync) { Module(new TopSlow(freq, baud)) }
+  // io <> topSlow.io
+
+  withClock(wiz.io.clk_out) {
+    val reset_sync = RegNext(RegNext(RegNext(RegNext(RegNext(RegNext(reset))))))
+    val topSlow = withReset(reset_sync) { Module(new TopSlow(freq, baud)) }
+    io <> topSlow.io
+
+    withReset(reset_sync) {
+      // Blink
+      val testBlink1 = RegInit(0.U(28.W))
+      val testBlink2 = Reg(UInt(28.W))
+      testBlink1 := testBlink1 + 1.U
+      when (testBlink1 === 80000000.U) {
+        testBlink1 := 0.U
+      }
+      io.led(14) := testBlink1 > 40000000.U
+      testBlink2 := testBlink2 + 1.U
+      when (testBlink2 === 80000000.U) {
+        testBlink2 := 0.U
+      }
+      io.led(13) := testBlink2 > 40000000.U
+    }
+  }
+  
+
+
 
   io.led(15) := wiz.io.locked
   // io.led := topSlow.io.led
@@ -96,5 +144,6 @@ class Top(freq: Int, baud: Int) extends Module {
 }
 
 object Top extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Top(80000000, 115200))
+  // (new chisel3.stage.ChiselStage).emitVerilog(new Top(80000000, 115200))
+  (new chisel3.stage.ChiselStage).emitVerilog(new TopSlow(100000000, 115200))
 }
