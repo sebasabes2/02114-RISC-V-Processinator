@@ -37,6 +37,9 @@ class TopSlow(freq: Int, baud: Int) extends Module {
     instMem.io.addr := bootLoader.io.addr
     instMem.io.writeData := bootLoader.io.writeData
     instMem.io.writeWord := true.B
+    dataMem.io.addr := bootLoader.io.addr
+    dataMem.io.writeData := bootLoader.io.writeData
+    dataMem.io.writeWord := true.B
   }
   when (bootLoader.io.loading) {
     CPUreset := true.B

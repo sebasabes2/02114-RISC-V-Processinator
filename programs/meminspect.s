@@ -1,12 +1,18 @@
 li s3, 0x3000   # UART address
 
 li s0, 0x1000
-li s1, 0x2000
+li s1, 0x1100
 
 loop:
-lb a0, 0(s0)
+lw a0, 0(s0)
 jal ra, transmit
-addi s0, s0, 1
+srli a0, a0, 8
+jal ra, transmit
+srli a0, a0, 8
+jal ra, transmit
+srli a0, a0, 8
+jal ra, transmit
+addi s0, s0, 4
 blt s0, s1, loop
 
 stop:

@@ -61,6 +61,7 @@ def writeELF(ser, fileArray):
       # print(content)
       missingBytes = (-len(content)) % 4
       content += bytes(b'\x00'*missingBytes)
+      print(content)
       # print(len(content), content)
       writeBinary(ser, content, addr)
 
