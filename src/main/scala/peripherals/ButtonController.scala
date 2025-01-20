@@ -22,60 +22,34 @@ class ButtonController(start: Int, size: Int) extends Module {
   btnR.io.btn := io.btn(2)
   btnD.io.btn := io.btn(3)
 
-
-
-//  //sync
-//  val btnSyncU = RegNext(RegNext(io.btn(0)))
-//  val btnSyncL = RegNext(RegNext(io.btn(1)))
-//  val btnSyncR = RegNext(RegNext(io.btn(2)))
-//  val btnSyncD = RegNext(RegNext(io.btn(3)))
-//
-//  //debounce
-//  val CLOCK_FREQ = 100000000 // 100 MHz
-//  val DEBOUNCE_PERIOD = 20000 // 20 ns
-//  val DEBOUNCE_COUNTER_MAX = CLOCK_FREQ / 1000000 * DEBOUNCE_PERIOD
-//  val debounce_counter = RegInit(0.U(log2Up(DEBOUNCE_COUNTER_MAX).W))
-//  val tick = debounce_counter === (DEBOUNCE_COUNTER_MAX-1).U
-//
-//  val btnDebouncedU = Reg(Bool())
-//  val btnDebouncedL = Reg(Bool())
-//  val btnDebouncedR = Reg(Bool())
-//  val btnDebouncedD = Reg(Bool())
-//
-//  debounce_counter := debounce_counter + 1.U
-//  when(debounce_counter === (DEBOUNCE_COUNTER_MAX-1).U){
-//    debounce_counter := 0.U
-//    btnDebouncedU := btnSyncU
-//    btnDebouncedL := btnSyncL
-//    btnDebouncedR := btnSyncR
-//    btnDebouncedD := btnSyncD
-//  }
-//
-//  val shiftRegU = RegInit(0.U(3.W))
-//  val shiftRegL = RegInit(0.U(3.W))
-//  val shiftRegR = RegInit(0.U(3.W))
-//  val shiftRegD = RegInit(0.U(3.W))
-//
-//  when(debounce_counter === (DEBOUNCE_COUNTER_MAX-1).U) {
-//    shiftRegU := shiftRegU(1, 0) ## btnDebouncedU
-//    shiftRegL := shiftRegL(1, 0) ## btnDebouncedL
-//    shiftRegR := shiftRegR(1, 0) ## btnDebouncedR
-//    shiftRegD := shiftRegD(1, 0) ## btnDebouncedD
-//  }
-//
-//  //majority
-//
-//  //works btnSync, io.btn(x), btnDebounce
-//  //check shiftReg
-//  val btnCleanU = ( shiftRegU (2) & shiftRegU (1)) | ( shiftRegU (2) & shiftRegU (0)) | ( shiftRegU (1) & shiftRegU (0))
-//  val btnCleanL = ( shiftRegL (2) & shiftRegL (1)) | ( shiftRegL (2) & shiftRegL (0)) | ( shiftRegL (1) & shiftRegL (0))
-//  val btnCleanR = ( shiftRegR (2) & shiftRegR (1)) | ( shiftRegR (2) & shiftRegR (0)) | ( shiftRegR (1) & shiftRegR (0))
-//  val btnCleanD = ( shiftRegD (2) & shiftRegD (1)) | ( shiftRegD (2) & shiftRegD (0)) | ( shiftRegD (1) & shiftRegD (0))
+  //rising edge
+  val risingEdgeU = RegInit(false.B)
+  val risingEdgeR = RegInit(false.B)
+  val risingEdgeL = RegInit(false.B)
+  val risingEdgeD = RegInit(false.B)
+  when(btnU.io.btn & !RegNext(btnU.io.btn)){
+    risingEdgeU := true.B
+  }
+  when(btnR.io.btn & !RegNext(btnR.io.btn)){
+    risingEdgeR := true.B
+  }
+  when(btnL.io.btn & !RegNext(btnL.io.btn)){
+    risingEdgeL := true.B
+  }
+  when(btnD.io.btn & !RegNext(btnD.io.btn)){
+    risingEdgeD := true.B
+  }
 
   val valid = RegNext(page === (start/size).U)
   when (valid) {
-    //                     4             3           2           1
-    io.bus.readData := btnL.io.btn ## btnD.io.btn ## btnR.io.btn ## btnU.io.btn
+    //                     4               3              2              1
+    io.bus.readData := (btnL.io.btn ## btnD.io.btn ## btnR.io.btn ## btnU.io.btn
+                     ## risingEdgeL ## risingEdgeD ## risingEdgeR ## risingEdgeU )
+    risingEdgeU := false.B
+    risingEdgeR := false.B
+    risingEdgeL := false.B
+    risingEdgeD := false.B
+
   } .otherwise {
     io.bus.readData := 0.U
   }
