@@ -6,8 +6,6 @@ class TopOld(freq: Int, baud: Int) extends Module {
     val led = Output(Vec(16, Bool()))
     val rx = Input(Bool())
     val tx = Output(Bool())
-    val JA_0 = Output(Bool())
-    val JA_1 = Output(Bool())
   })
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
@@ -41,9 +39,6 @@ class TopOld(freq: Int, baud: Int) extends Module {
   when (bootLoader.io.loading) {
     CPUreset := true.B
   }
-
-  io.JA_0 := clock.asBool
-  io.JA_1 := io.rx
 }
 
 class clk_wiz_0 extends BlackBox {
@@ -60,17 +55,17 @@ class Top(freq: Int, baud: Int) extends Module {
     val led = Output(Vec(16, Bool()))
     val rx = Input(Bool())
     val tx = Output(Bool())
-    val JA_0 = Output(Bool())
-    val JA_1 = Output(Bool())
   })
 
   val wiz = Module(new clk_wiz_0)
   wiz.io.clk_in := clock
   wiz.io.reset := false.B
 
-  val top = withClock(wiz.io.clk_out) { Module(new TopOld(freq, baud)) }
-  io <> top.io
-
+  withClock(wiz.io.clk_out) {
+    val syncReset = RegNext(RegNext(RegNext(reset)))
+    val top = withReset(syncReset) { Module(new TopOld(freq, baud)) }
+    io <> top.io
+  }
 }
 
 object Top extends App {
