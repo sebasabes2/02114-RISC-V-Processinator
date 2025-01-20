@@ -1,11 +1,13 @@
 import chisel3._
 import chisel3.util._
 
-class Top(freq: Int, baud: Int) extends Module {
+class TopOld(freq: Int, baud: Int) extends Module {
   val io = IO(new Bundle {
     val led = Output(Vec(16, Bool()))
     val rx = Input(Bool())
     val tx = Output(Bool())
+    val JA_0 = Output(Bool())
+    val JA_1 = Output(Bool())
   })
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
@@ -39,8 +41,38 @@ class Top(freq: Int, baud: Int) extends Module {
   when (bootLoader.io.loading) {
     CPUreset := true.B
   }
+
+  io.JA_0 := clock.asBool
+  io.JA_1 := io.rx
+}
+
+class clk_wiz_0 extends BlackBox {
+  val io = IO(new Bundle {
+    val reset = Input(Bool())
+    val clk_in = Input(Clock())
+    val clk_out = Output(Clock())
+    val locked = Output(Bool())
+  })
+}
+
+class Top(freq: Int, baud: Int) extends Module {
+  val io = IO(new Bundle {
+    val led = Output(Vec(16, Bool()))
+    val rx = Input(Bool())
+    val tx = Output(Bool())
+    val JA_0 = Output(Bool())
+    val JA_1 = Output(Bool())
+  })
+
+  val wiz = Module(new clk_wiz_0)
+  wiz.io.clk_in := clock
+  wiz.io.reset := false.B
+
+  val top = withClock(wiz.io.clk_out) { Module(new TopOld(freq, baud)) }
+  io <> top.io
+
 }
 
 object Top extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Top(100000000, 115200))
+  (new chisel3.stage.ChiselStage).emitVerilog(new Top(75000000, 115200))
 }
