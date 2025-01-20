@@ -48,12 +48,14 @@ def writeELF(ser, fileArray):
     headerOffset = secHeadOff + secHeadSize*i
     sec = fileArray[headerOffset : headerOffset + secHeadSize]
     nameIndex = bytesToInt(sec[0:4])
+    secType = bytesToInt(sec[4:8])
     addr = bytesToInt(sec[12:16])
     secOffset = bytesToInt(sec[16:20])
     secSize = bytesToInt(sec[20:24])
     name = strTable[nameIndex:].split(b'\x00')[0].decode('ascii')
     # print(name, name in ['.text', '.data'])
-    if (name in ['.text', '.data']):
+    # if (name in ['.text', '.data']):
+    if (secType == 1): # If type == SHT_PROGBITS
       print("Writing segment: " + name + " starting at address 0x" + '{:02X}'.format(addr))
       content = fileArray[secOffset : secOffset + secSize]
       # print(content)

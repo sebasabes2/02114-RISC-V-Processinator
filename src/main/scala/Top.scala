@@ -1,13 +1,15 @@
 import chisel3._
 import chisel3.util._
 
-class Top(freq: Int, baud: Int) extends Module {
-  val io = IO(new Bundle {
-    val led = Output(Vec(16, Bool()))
-    val rx = Input(Bool())
-    val tx = Output(Bool())
-    val vga = new VGA()
-  })
+class TopIO extends Bundle {
+  val led = Output(Vec(16, Bool()))
+  val rx = Input(Bool())
+  val tx = Output(Bool())
+  val vga = new VGA()
+}
+
+class TopSlow(freq: Int, baud: Int) extends Module {
+  val io = IO(new TopIO())
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
   val CPU = withReset(RegNext(CPUreset)) { Module(new CPU()) }
@@ -48,7 +50,49 @@ class Top(freq: Int, baud: Int) extends Module {
     CPUreset := true.B
   }
   // Debug:
-  io.tx := bootLoaderUart.io.tx
+  // io.tx := bootLoaderUart.io.tx
+  io.led(13) := bootLoader.io.loading
+}
+
+class clk_wiz_0 extends BlackBox {
+  val io = IO(new Bundle {
+    val reset = Input(Bool())
+    val clk_in = Input(Clock())
+    val clk_out = Output(Clock())
+    val locked = Output(Bool())
+  })
+}
+
+class Top(freq: Int, baud: Int) extends Module {
+  val io = IO(new TopIO())
+
+  // val clk = Reg(Bool())
+  // clk := ~clk
+  val wiz = Module(new clk_wiz_0)
+  wiz.io.reset := reset
+  wiz.io.clk_in := clock
+  // val topSlow = withClockAndReset(wiz.io.clk_out, ~wiz.io.locked) { Module(new TopSlow(freq, baud)) }
+  // io <> topSlow.io
+
+
+  // withClock(wiz.io.clk_out) {
+  //   val debugReset = RegInit(false.B)
+  //   // val reset = RegNext(RegNext(RegNext(~wiz.io.locked)))
+  //   val delayedReset = RegNext(RegNext(RegNext(reset)))
+  //   reset := false.B
+  //   // val topSlow = withReset(RegNext(RegNext(RegNext(~wiz.io.locked)))) { Module(new TopSlow(freq, baud)) }
+  //   val topSlow = withReset(reset) { Module(new TopSlow(freq, baud)) }
+  //   io <> topSlow.io
+  // }
+
+
+
+  val topSlow = withClockAndReset(wiz.io.clk_out, RegNext(RegNext(RegNext(~wiz.io.locked)))) { Module(new TopSlow(freq, baud)) }
+  io <> topSlow.io
+
+  io.led(15) := wiz.io.locked
+  // io.led := topSlow.io.led
+  // val io = topSlow.io
 }
 
 object Top extends App {
