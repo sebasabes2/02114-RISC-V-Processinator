@@ -2,6 +2,7 @@
 !.gitignore
 !build.sbt
 !Top.xdc
+!README.md
 
 !src/
 !src/**
