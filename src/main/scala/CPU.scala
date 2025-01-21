@@ -255,19 +255,19 @@ class CPU extends Module {
   // val LoadToMem = WireDefault(0.U(32.W))
   val LoadToMem = WireInit(UInt(32.W), DontCare)
   switch(funct3_mem){
-    is(0.U){
+    is(0.U){ //byte
       LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
     }
-    is(1.U){
+    is(1.U){//half
       LoadToMem := Fill(16,io.data.readData(15)) ## io.data.readData(15,0)
     }
-    is(2.U){
+    is(2.U){ //word
       LoadToMem := io.data.readData
     }
-    is(4.U){
+    is(4.U){ //byte (U)
       LoadToMem := io.data.readData(7,0)
     }
-    is(5.U){
+    is(5.U){ //half (U)
       LoadToMem := io.data.readData(15,0)
     }
   }
