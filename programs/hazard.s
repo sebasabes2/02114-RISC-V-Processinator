@@ -81,6 +81,16 @@ addi a0, a0, 1
 addi a0, a0, 1
 jal ra, transmit # expects '!'
 
+li a0, 'A'
+addi a0, a0, 1
+addi a0, a0, 1
+addi a0, a0, 1
+jal ra, dummy
+addi a0, a0, 1
+addi a0, a0, 1
+addi a0, a0, 1
+jal ra, transmit # expects ' 
+
 # End with new line
 li a0, '\n'
 jal ra, transmit 
@@ -95,4 +105,7 @@ nop
 andi t0, t0, 1
 beq x0, t0, transmit
 sw a0, 0(s1)
+jalr x0, 0(ra)
+
+dummy:
 jalr x0, 0(ra)

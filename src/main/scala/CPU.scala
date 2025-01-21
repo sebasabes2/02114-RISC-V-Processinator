@@ -147,6 +147,7 @@ class CPU extends Module {
     MemWB := false.B
     MemStore := false.B
     Bmode := false.B
+    doJump := false.B
     newPC := PC
   }
 
@@ -156,6 +157,7 @@ class CPU extends Module {
     MemWB := false.B
     MemStore := false.B
     Bmode := false.B
+    doJump := false.B
   }
 
   when (ex_forwardA) {
