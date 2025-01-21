@@ -1,0 +1,93 @@
+import chisel3._
+import chisel3.util._
+
+class VGA extends Bundle {
+  val Red = Output(UInt(4.W))
+  val Green = Output(UInt(4.W))
+  val Blue = Output(UInt(4.W))
+  val Hsync = Output(Bool())
+  val Vsync = Output(Bool())
+}
+
+class VideoController(start: Int, size: Int) extends Module {
+  val io = IO(new Bundle {
+    val bus = Flipped(new Bus())
+    val vga = new VGA()
+  })
+
+  val Y_WIDTH = 10
+  val X_WIDTH = 11
+
+  val mem = SyncReadMem(2^(Y_WIDTH + X_WIDTH), UInt(6.W))
+
+  val width = log2Up(size)
+  val page = io.bus.addr(31,width)
+  val index = io.bus.addr(width - 1,0)
+  val write = io.bus.writeWord | io.bus.writeHalf | io.bus.writeByte
+  when (write && (page === (start/size).U)) {
+    mem.write(index, io.bus.writeData(5,0))
+  }
+
+  io.bus.readValid := false.B
+  io.bus.readData := 0.U
+
+  //VGA parameters
+  val VGA_H_DISPLAY_SIZE = 640
+  val VGA_V_DISPLAY_SIZE = 480
+  val VGA_H_FRONT_PORCH_SIZE = 16
+  val VGA_H_SYNC_PULSE_SIZE = 96
+  val VGA_H_BACK_PORCH_SIZE = 48
+  val VGA_V_FRONT_PORCH_SIZE = 10
+  val VGA_V_SYNC_PULSE_SIZE = 2
+  val VGA_V_BACK_PORCH_SIZE = 33
+  // val VGA_H_DISPLAY_SIZE = 1280
+  // val VGA_V_DISPLAY_SIZE = 960
+  // val VGA_H_FRONT_PORCH_SIZE = 80
+  // val VGA_H_SYNC_PULSE_SIZE = 136
+  // val VGA_H_BACK_PORCH_SIZE = 216
+  // val VGA_V_FRONT_PORCH_SIZE = 1
+  // val VGA_V_SYNC_PULSE_SIZE = 3
+  // val VGA_V_BACK_PORCH_SIZE = 30
+  val SCALE_FACTOR = 4;
+
+  val VGA_H_TOTAL = VGA_H_DISPLAY_SIZE + VGA_H_FRONT_PORCH_SIZE + VGA_H_SYNC_PULSE_SIZE + VGA_H_BACK_PORCH_SIZE
+  val VGA_V_TOTAL = VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE + VGA_V_SYNC_PULSE_SIZE + VGA_V_BACK_PORCH_SIZE
+
+  val ScaleCounterReg = RegInit(0.U(log2Up(SCALE_FACTOR).W))
+  val CounterXReg = RegInit(0.U(11.W))
+  val CounterYReg = RegInit(0.U(11.W))
+
+  when(ScaleCounterReg === (SCALE_FACTOR - 1).U) {
+    when(CounterXReg === (VGA_H_TOTAL - 1).U) {
+      CounterXReg := 0.U
+      when(CounterYReg === (VGA_V_TOTAL - 1).U) {
+        CounterYReg := 0.U
+      }.otherwise {
+        CounterYReg := CounterYReg + 1.U
+      }
+    }.otherwise {
+      CounterXReg := CounterXReg + 1.U
+    }
+  }.otherwise {
+    ScaleCounterReg := ScaleCounterReg + 1.U
+  }
+
+  val Hsync = (CounterXReg < (VGA_H_DISPLAY_SIZE + VGA_H_FRONT_PORCH_SIZE).U || (CounterXReg >= (VGA_H_DISPLAY_SIZE + VGA_H_FRONT_PORCH_SIZE + VGA_H_SYNC_PULSE_SIZE).U))
+  val Vsync = (CounterYReg < (VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE).U || (CounterYReg >= (VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE + VGA_V_SYNC_PULSE_SIZE).U))
+
+  val inDisplayArea = (CounterXReg < VGA_H_DISPLAY_SIZE.U) && (CounterYReg < VGA_V_DISPLAY_SIZE.U)
+  val pixelX = CounterXReg
+  val pixelY = CounterYReg
+
+  val pixel = mem.read(pixelY(9,0) ## pixelX(10,0))
+
+  val red = Mux(RegNext(inDisplayArea), pixel(5,4) ## pixel(5,4), 0.U)
+  val green = Mux(RegNext(inDisplayArea), pixel(3,2) ## pixel(3,2), 0.U)
+  val blue = Mux(RegNext(inDisplayArea), pixel(1,0) ## pixel(1,0), 0.U)
+
+  io.vga.Hsync := RegNext(RegNext(Hsync))
+  io.vga.Vsync := RegNext(RegNext(Vsync))
+  io.vga.Red := RegNext(red)
+  io.vga.Green := RegNext(green)
+  io.vga.Blue := RegNext(blue)
+}
