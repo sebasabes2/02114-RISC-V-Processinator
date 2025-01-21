@@ -1,8 +1,9 @@
 .text
 li s0, 0x100000 # start of video memory
 
-li s1, 1280 # max x-value
-li s2, 960 # max y-value
+li s1, 640 # max x-value
+li s2, 480 # max y-value
+li s3, 0x3f # White
 
 start:
 li t1, 0 # y value
@@ -15,6 +16,9 @@ blt t0, s1, xloop
 addi t1, t1, 1
 blt t1, s2, yloop
 jal x0, start
+
+stop:
+beq x0, x0, stop
 
 display:
 mv t3, t1

@@ -5,6 +5,7 @@ class TopIO extends Bundle {
   val led = Output(Vec(16, Bool()))
   val rx = Input(Bool())
   val tx = Output(Bool())
+  val vga = new VGA()
 }
 
 class TopSlow(freq: Int, baud: Int) extends Module {
@@ -16,16 +17,20 @@ class TopSlow(freq: Int, baud: Int) extends Module {
   val dataMem = Module(new Memory(0x1000, 0x1000))
   val led = withReset(RegNext(CPUreset)) { Module(new LEDController(0x2000, 0x1000)) }
   val uart = withReset(RegNext(CPUreset)) { Module(new UARTController(0x3000, 0x1000, freq, baud)) }
+  val video = Module(new VideoController(0x100000, 0x100000))
   instMem.io <> CPU.io.inst
   dataMem.io <> CPU.io.data
   led.io.bus <> CPU.io.data
   uart.io.bus <> CPU.io.data
+  video.io.bus <> CPU.io.data
 
   CPU.io.data.readData := dataMem.io.readData | led.io.bus.readData | uart.io.bus.readData
 
   io.led := led.io.led
   uart.io.rx := io.rx
   io.tx := uart.io.tx
+
+  io.vga := video.io.vga
 
   // Boot loader
   val bootLoaderUart = Module(new WordUart(freq, baud))
