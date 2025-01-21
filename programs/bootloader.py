@@ -82,6 +82,8 @@ with open(readFile, "rb") as file:
   except:
     print("Unable to open Serial Port")
     quit()
+  # Clear Memory:
+  writeBinary(ser, b'\x00'*0x2000, 0)
   if (isELF(fileArray)):
     writeELF(ser, fileArray)
   else:
