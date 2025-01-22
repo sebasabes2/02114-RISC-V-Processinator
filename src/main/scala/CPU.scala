@@ -103,13 +103,13 @@ class CPU extends Module {
       jumpAddress := PC + B_imm
     }
     is (Opcodes.lui) {
-      operand1 := U_imm
-      operand2 := 0.U
+      operand1 := 0.U
+      operand2 := U_imm
       ALUWB := true.B
     }
     is (Opcodes.auipc) {
-      operand1 := U_imm
-      operand2 := PC
+      operand1 := PC
+      operand2 := U_imm
       ALUWB := true.B
     }
     is (Opcodes.jal){
@@ -170,11 +170,8 @@ class CPU extends Module {
   // Execute
   val op1 = RegNext(operand1)
   val op2 = RegNext(operand2)
-  val BranchOffset = RegNext(B_imm)
   val BranchMode = RegNext(Bmode)
   val ex_ALUmode = RegNext(ALUmode)
-  val jalOffset = RegNext(J_imm)
-  val jalrOffset = RegNext(I_imm)
   val funct3_ex = RegNext(funct3)
 
   switch (ex_ALUmode(2,0)) {
@@ -241,7 +238,6 @@ class CPU extends Module {
   }
 
   // Memory (Execute continue)
-  val funct3_mem = RegNext(funct3_ex)
 
   io.data.addr := ALUResult
   io.data.writeData := newReg(RegNext(rs2))
@@ -251,6 +247,7 @@ class CPU extends Module {
 
 
   // Memory/Writeback
+  val funct3_mem = RegNext(funct3_ex)
   // val funct3_wb = RegNext(funct3_mem)
   
   //LoadToMem belongs to Mem-WB stage
