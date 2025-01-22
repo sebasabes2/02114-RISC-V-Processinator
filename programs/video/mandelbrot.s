@@ -164,14 +164,42 @@ jalr x0, 0(ra)
 
 mult_fixed:
 
+# # check0 if a0 is 0 return 0
+# li a2, 0
+# bne x0, a0, mult_check1
+# jalr x0, 0(ra)
+
+# mult_check1:
+# # check1 if a0 is negative and a1 is negative, invert both and do pos_pos
+# bge a0, x0, mult_check2
+# bge a1, x0, mult_check2
+# sub a0, x0, a0 # a0 = -a0
+# sub a1, x0, a1 # a1 = -a1
+# beq x0, x0, mult_fixed_pos_pos
+
+# mult_check2:
+
+
+# mult_fixed_pos_pos:
+# add a2, a2, a1
+# addi a0, a0, -1
+# bne x0, a0, mult_fixed_pos_pos
+# srai a2, a2, 13
+# jalr x0, 0(ra)
+
+
 li a2, 0
-bne x0, a0, mult_fixed_loop
-jalr x0, 0(ra)
 
 mult_fixed_loop:
+beq a0, x0, mult_fixed_return
+andi a3, a0, 1
+beq x0, a3, mult_fixed_even
 add a2, a2, a1
-addi a0, a0, -1
-bne x0, a0, mult_fixed_loop
+mult_fixed_even:
+srli a0, a0, 1
+slli a1, a1, 1
+beq x0, x0, mult_fixed_loop
+mult_fixed_return:
 srai a2, a2, 13
 jalr x0, 0(ra)
 
