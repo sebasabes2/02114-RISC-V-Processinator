@@ -15,14 +15,15 @@ class VideoController(start: Int, size: Int) extends Module {
     val vga = new VGA()
   })
 
-  val Y_WIDTH = 9
-  val X_WIDTH = 10
+  val Y_WIDTH = 8
+  val X_WIDTH = 9
 
-  val mem = SyncReadMem(2^(Y_WIDTH + X_WIDTH), UInt(6.W))
+  val MEM_SIZE = 1 << (Y_WIDTH + X_WIDTH)
+  val mem = SyncReadMem(MEM_SIZE, UInt(6.W))
 
-  val width = log2Up(size)
-  val page = io.bus.addr(31,width)
-  val index = io.bus.addr(width - 1,0)
+  val width = log2Up(size) // 20
+  val page = io.bus.addr(31,width) // 0x1
+  val index = io.bus.addr(width - 1,0) // 0
   val write = io.bus.writeWord | io.bus.writeHalf | io.bus.writeByte
   when (write && (page === (start/size).U)) {
     mem.write(index, io.bus.writeData(5,0))
@@ -53,9 +54,9 @@ class VideoController(start: Int, size: Int) extends Module {
   val VGA_H_TOTAL = VGA_H_DISPLAY_SIZE + VGA_H_FRONT_PORCH_SIZE + VGA_H_SYNC_PULSE_SIZE + VGA_H_BACK_PORCH_SIZE
   val VGA_V_TOTAL = VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE + VGA_V_SYNC_PULSE_SIZE + VGA_V_BACK_PORCH_SIZE
 
-  val ScaleCounterReg = RegInit(0.U(log2Up(SCALE_FACTOR).W))
-  val CounterXReg = RegInit(0.U(10.W))
-  val CounterYReg = RegInit(0.U(10.W))
+  val ScaleCounterReg = Reg(UInt(log2Up(SCALE_FACTOR).W))
+  val CounterXReg = Reg(UInt(10.W))
+  val CounterYReg = Reg(UInt(10.W))
 
   when(ScaleCounterReg === (SCALE_FACTOR - 1).U) {
     ScaleCounterReg := 0.U
@@ -77,8 +78,8 @@ class VideoController(start: Int, size: Int) extends Module {
   val Vsync = (CounterYReg < (VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE).U || (CounterYReg >= (VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE + VGA_V_SYNC_PULSE_SIZE).U))
 
   val inDisplayArea = (CounterXReg < VGA_H_DISPLAY_SIZE.U) && (CounterYReg < VGA_V_DISPLAY_SIZE.U)
-  val pixelX = CounterXReg
-  val pixelY = CounterYReg
+  val pixelX = CounterXReg(9,1)
+  val pixelY = CounterYReg(9,1)
 
   val pixel = mem.read(pixelY(Y_WIDTH - 1,0) ## pixelX(X_WIDTH - 1,0))
 

@@ -24,3 +24,12 @@ object ALUModes {
   val setLessThan = 0x2.U
   val setLessThanU = 0x3.U
 }
+
+object BranchModes {
+  val beq = 0x0.U
+  val bne = 0x1.U
+  val blt = 0x4.U
+  val bge = 0x5.U
+  val bltu = 0x6.U
+  val bgeu = 0x7.U
+}

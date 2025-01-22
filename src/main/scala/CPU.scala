@@ -212,22 +212,22 @@ class CPU extends Module {
   // val BranchTaken = WireDefault(false.B)
   val BranchTaken = WireInit(Bool(), DontCare)
   switch(ex_ALUmode) {
-    is(0.U) {
+    is(BranchModes.beq) {
       BranchTaken := op1 === op2
     }
-    is(1.U) {
+    is(BranchModes.bne) {
       BranchTaken := op1 =/= op2
     }
-    is(4.U) {
+    is(BranchModes.blt) {
       BranchTaken := op1.asSInt < op2.asSInt
     }
-    is(5.U) {
+    is(BranchModes.bge) {
       BranchTaken := op1.asSInt >= op2.asSInt
     }
-    is(6.U) {
+    is(BranchModes.bltu) {
       BranchTaken := op1 < op2
     }
-    is(7.U) {
+    is(BranchModes.bgeu) {
       BranchTaken := op1 >= op2
     }
   }
