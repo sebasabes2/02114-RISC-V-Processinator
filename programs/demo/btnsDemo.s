@@ -15,6 +15,8 @@ sw x11, 0x(x3) ##LED 1 ON
 
 start:
 lw x4, 0(x1)    # receive
+nop
+nop
 beq x0, x4, start
 
 
