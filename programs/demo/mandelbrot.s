@@ -8,6 +8,7 @@ li s5, -120 # initial y offset
 
 li s6, 32 # move amount
 li s7, 6 # zoom amount
+li s8, 64 # max iterations
 
 clear_screen:
 # # clear screen
@@ -96,7 +97,7 @@ lw t1, 0(t0)   # Read board buttons
 srli t1, t1, 4
 lw t2, 4(t0)   # Read Pmod buttons
 # li t0, 0
-andi t2, t2, 0xc0
+andi t2, t2, 0xf0
 # slli t2, t2, 4
 add t2, t2, t1
 bne x0, t2, handle_input
@@ -127,6 +128,18 @@ andi t3, t2, 8
 beq x0, t3, skip_button_L
 sub s4, s4, s6
 skip_button_L:
+
+# Check 0
+andi t3, t2, 16
+beq x0, t3, skip_button_0
+slli s8, s8, 1
+skip_button_0:
+
+# Check 1
+andi t3, t2, 32
+beq x0, t3, skip_button_1
+srli s8, s8, 1
+skip_button_1:
 
 # Check 2
 andi t3, t2, 64
@@ -200,7 +213,8 @@ mv t1, a1
 
 # initialize i, 50, 4.0
 li t4, 0        # i = 0
-li t5, 64       # t5 = 50
+# li t5, 64       # t5 = 50
+mv t5, s8
 li t6, 4        # t6 = (int) 4
 slli t6, t6, 13 # t6 = (fixed) 4.0
 
