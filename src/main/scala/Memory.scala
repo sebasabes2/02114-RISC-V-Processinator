@@ -21,9 +21,36 @@ class Memory(start: Int, size: Int) extends Module {
   val page = io.addr(31,width)
   val index = io.addr(width - 1,2)
   val select = io.addr(1,0)
+  val read0 = mem0.read(index)
+  val read1 = mem1.read(index)
+  val read2 = mem2.read(index)
+  val read3 = mem3.read(index)
+
+
+
+
   // Read
   when (RegNext(page === (start/size).U)) {
-    io.readData := mem3.read(index) ## mem2.read(index) ## mem1.read(index) ## mem0.read(index)
+    io.readData := 0.U
+    switch (RegNext(select)){
+      is(0.U){
+        //io.readData := mem3.read(index) ## mem2.read(index) ## mem1.read(index) ## mem0.read(index)
+        io.readData := read3 ## read2 ## read1 ## read0
+      }
+      is(1.U){
+        //io.readData := mem0.read(index) ## mem3.read(index) ## mem2.read(index) ## mem1.read(index)
+        io.readData := read0 ## read3 ## read2 ## read1
+      }
+      is(2.U){
+        //io.readData := mem1.read(index) ## mem0.read(index) ## mem3.read(index) ## mem2.read(index)
+        io.readData := read1 ## read0 ## read3 ## read2
+      }
+      is(3.U){
+        //io.readData := mem2.read(index) ## mem1.read(index) ## mem0.read(index) ## mem3.read(index)
+        io.readData := read2 ## read1 ## read0 ## read3
+      }
+    }
+//    io.readData := mem3.read(index) ## mem2.read(index) ## mem1.read(index) ## mem0.read(index)
     io.readValid := true.B
   } .otherwise {
     io.readData := 0.U
