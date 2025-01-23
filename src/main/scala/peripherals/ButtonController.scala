@@ -13,10 +13,10 @@ class ButtonController(start: Int, size: Int) extends Module {
   val page = io.bus.addr(31, width)
 
   //btns
-  val btnU = Module(new DebounceBtn)
-  val btnL = Module(new DebounceBtn)
-  val btnR = Module(new DebounceBtn)
-  val btnD = Module(new DebounceBtn)
+  val btnU = Module(new DebounceBtn(75000000))
+  val btnL = Module(new DebounceBtn(75000000))
+  val btnR = Module(new DebounceBtn(75000000))
+  val btnD = Module(new DebounceBtn(75000000))
   btnU.io.btn := io.btn(0)
   btnL.io.btn := io.btn(1)
   btnR.io.btn := io.btn(2)
