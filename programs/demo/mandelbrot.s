@@ -3,21 +3,57 @@
 li s0, 320 # max x-value
 li s1, 240 # max y-value
 
-# clear screen:
+li s4, -240 # initial x offset
+li s5, -120 # initial y offset
+
+li s6, 32 # move amount
+li s7, 6 # zoom amount
+
+clear_screen:
+# # clear screen
+# li s3, 0 # y value
+# clear_yloop:
+# li s2, 0 # x value
+# clear_xloop:
+# mv a0, s2 # move x to x input
+# mv a1, s3 # move y to y input
+# li a2, 0x3f
+# jal ra, display
+
+# # end of loop
+# addi s2, s2, 1
+# blt s2, s0, clear_xloop
+# addi s3, s3, 1
+# blt s3, s1, clear_yloop
+
+# Low resolution preview:
 li s3, 0 # y value
-clear_yloop:
+low_yloop:
 li s2, 0 # x value
-clear_xloop:
+low_xloop:
+
+# loop pixels
 mv a0, s2 # move x to x input
 mv a1, s3 # move y to y input
-li a2, 0x3f
-jal ra, display
+
+add a0, a0, s4
+add a1, a1, s5
+
+sll a0, a0, s7
+sll a1, a1, s7
+
+jal ra, iterate
+mv a2, a0
+
+mv a0, s2 # move x to x input
+mv a1, s3 # move y to y input
+jal ra, display_16
 
 # end of loop
-addi s2, s2, 1
-blt s2, s0, clear_xloop
-addi s3, s3, 1
-blt s3, s1, clear_yloop
+addi s2, s2, 4
+blt s2, s0, low_xloop
+addi s3, s3, 4
+blt s3, s1, low_yloop
 
 # Start of mandelbrot generation:
 li s3, 0 # y value
@@ -29,11 +65,11 @@ xloop:
 mv a0, s2 # move x to x input
 mv a1, s3 # move y to y input
 
-addi a0, a0, -240
-addi a1, a1, -120
+add a0, a0, s4
+add a1, a1, s5
 
-slli a0, a0, 6
-slli a1, a1, 6
+sll a0, a0, s7
+sll a1, a1, s7
 
 jal ra, iterate
 mv a2, a0
@@ -42,14 +78,90 @@ mv a0, s2 # move x to x input
 mv a1, s3 # move y to y input
 jal ra, display
 
+jal ra, check_for_input # restart if input is given
+
 # end of loop
 addi s2, s2, 1
 blt s2, s0, xloop
 addi s3, s3, 1
 blt s3, s1, yloop
 
-stop:
-beq x0, x0, stop
+wait_for_input:
+jal ra, check_for_input
+beq x0, x0, wait_for_input
+
+check_for_input:
+li t0, 0x4000  # Btn address
+lw t1, 0(t0)   # Read board buttons
+srli t1, t1, 4
+lw t2, 4(t0)   # Read Pmod buttons
+# li t0, 0
+andi t2, t2, 0xc0
+# slli t2, t2, 4
+add t2, t2, t1
+bne x0, t2, handle_input
+jalr x0, 0(ra)
+
+handle_input:
+
+# Check U
+andi t3, t2, 1
+beq x0, t3, skip_button_U
+sub s5, s5, s6
+skip_button_U:
+
+# Check R
+andi t3, t2, 2
+beq x0, t3, skip_button_R
+add s4, s4, s6
+skip_button_R:
+
+# Check D
+andi t3, t2, 4
+beq x0, t3, skip_button_D
+add s5, s5, s6
+skip_button_D:
+
+# Check L
+andi t3, t2, 8
+beq x0, t3, skip_button_L
+sub s4, s4, s6
+skip_button_L:
+
+# Check 2
+andi t3, t2, 64
+beq x0, t3, skip_button_2
+srai s4, s4, 1
+srai s5, s5, 1
+addi s7, s7, 1
+skip_button_2:
+
+# Check 3
+andi t3, t2, 128
+beq x0, t3, skip_button_3
+slli s4, s4, 1
+slli s5, s5, 1
+addi s7, s7, -1
+skip_button_3:
+
+# rerender image:
+nop         # This nop is essential
+beq x0, x0, clear_screen
+
+display_16:
+mv a4, ra
+addi t2, a0, 4
+addi t3, a1, 4
+display_16_yloop:
+display_16_xloop:
+jal ra, display
+addi a0, a0, 1
+blt a0, t2, display_16_xloop
+addi a1, a1, 1
+addi a0, a0, -4
+blt a1, t3, display_16_yloop
+mv ra, a4
+jalr x0, 0(ra)
 
 display:
 li t0, 0x100000  # start of video memory
