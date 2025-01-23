@@ -54,6 +54,7 @@ class TopSlow(freq: Int, baud: Int) extends Module {
   when (bootLoader.io.loading) {
     CPUreset := true.B
   }
+  CPU.io.startAddr := bootLoader.io.startAddr
 }
 
 class clk_wiz_0 extends BlackBox {

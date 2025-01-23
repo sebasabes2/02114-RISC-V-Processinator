@@ -28,15 +28,11 @@ def isELF(fileArray):
   return fileArray[0:16] == magicBytes
 
 def writeELF(ser, fileArray):
+  entryPoint = bytesToInt(fileArray[24:28])
   secHeadOff = bytesToInt(fileArray[32:36])
   secHeadSize = bytesToInt(fileArray[46:48])
   secHeadNum = bytesToInt(fileArray[48:50])
   secHeadStrNdx = bytesToInt(fileArray[50:52])
-
-  # print(secHeadOff)
-  # print(secHeadSize)
-  # print(secHeadNum)
-  # print(secHeadStrNdx)
 
   strSecHeadOff = secHeadOff + secHeadSize*secHeadStrNdx
   strSec = fileArray[strSecHeadOff : strSecHeadOff + secHeadSize]
@@ -53,17 +49,14 @@ def writeELF(ser, fileArray):
     secOffset = bytesToInt(sec[16:20])
     secSize = bytesToInt(sec[20:24])
     name = strTable[nameIndex:].split(b'\x00')[0].decode('ascii')
-    # print(name, name in ['.text', '.data'])
-    # if (name in ['.text', '.data']):
-    if (secType == 1): # If type == SHT_PROGBITS
+    if (secType == 1 and addr != 0): # If type == SHT_PROGBITS. Addr != 0 should be changed to something smarter, but this is to avoid comments.
       print("Writing segment: " + name + " starting at address 0x" + '{:02X}'.format(addr))
       content = fileArray[secOffset : secOffset + secSize]
-      # print(content)
       missingBytes = (-len(content)) % 4
       content += bytes(b'\x00'*missingBytes)
-      print(content)
-      # print(len(content), content)
       writeBinary(ser, content, addr)
+
+  writeEndCode(ser, entryPoint)
 
 
 def writeBinary(ser, binary, wrPtr = 0):
@@ -71,8 +64,9 @@ def writeBinary(ser, binary, wrPtr = 0):
   ser.write(intToBytes(wrPtr))
   ser.write(binary)
 
-def writeEndCode(ser):
+def writeEndCode(ser, startAddr = 0):
   ser.write(endCode)
+  ser.write(intToBytes(startAddr))
 
 with open(readFile, "rb") as file:
   fileArray = file.read()
@@ -88,5 +82,5 @@ with open(readFile, "rb") as file:
     writeELF(ser, fileArray)
   else:
     writeBinary(ser, fileArray)
-  writeEndCode(ser)
+    writeEndCode(ser)
   ser.close()

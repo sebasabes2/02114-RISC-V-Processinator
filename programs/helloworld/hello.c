@@ -1,15 +1,9 @@
-void transmit(int byte);
+void transmit(char byte);
 
 void print(char *array) {
-  for (int i = 0; i < 5; i ++) {
-    int x = ((int*) array)[0];
-    transmit(x);
-    x = x >> 8;
-    transmit(x);
-    x = x >> 8;
-    transmit(x);
-    x = x >> 8;
-    transmit(x);
+  while (array[0] != '\0') {
+    transmit(array[0]);
+    array ++;
   }
 }
 

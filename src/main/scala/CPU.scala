@@ -5,6 +5,7 @@ class CPU extends Module {
   val io = IO(new Bundle {
     val inst = new Bus()
     val data = new Bus()
+    val startAddr = Input(UInt(32.W))
 
     // Only for testing
     val reg = Output(Vec(32, UInt(32.W)))
@@ -18,7 +19,7 @@ class CPU extends Module {
   io.reg := newReg
 
   // PC
-  val PC = RegInit(0xfffffffcL.U(32.W))
+  val PC = RegInit(io.startAddr - 4.U)
   val newPC = WireDefault(PC + 4.U)
   io.PC := newPC
 

@@ -1,5 +1,6 @@
 
 OUTPUT_ARCH( "riscv" )
+ENTRY(_start)
 
 SECTIONS
 {
@@ -7,5 +8,6 @@ SECTIONS
   .text : { *(.text) }
   . = 0x00001000;
   .data : { *(.data) }
+  .rodata : { *(.rodata) }
   .bss : { *(.bss) }
 }
