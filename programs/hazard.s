@@ -81,7 +81,7 @@ addi a0, a0, 1
 addi a0, a0, 1
 jal ra, transmit # expects '!'
 
-li a0, 'A'
+li a0, 'Q'
 addi a0, a0, 1
 addi a0, a0, 1
 addi a0, a0, 1
@@ -89,7 +89,7 @@ jal ra, dummy
 addi a0, a0, 1
 addi a0, a0, 1
 addi a0, a0, 1
-jal ra, transmit # expects ' 
+jal ra, transmit # expects 'W'
 
 # End with new line
 li a0, '\n'
