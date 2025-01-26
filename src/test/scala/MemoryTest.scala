@@ -38,7 +38,7 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.addr.poke(i*4)
         dut.clock.step(1)
         dut.io.readData.expect(expected(i))
-        println("0x%04x".format(i*4) + ": " + "0x%08x".format(dut.io.readData.peekInt()))
+        // println("0x%04x".format(i*4) + ": " + "0x%08x".format(dut.io.readData.peekInt()))
       }
     }
   }
