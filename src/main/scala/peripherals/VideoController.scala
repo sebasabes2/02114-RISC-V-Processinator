@@ -9,7 +9,7 @@ class VGA extends Bundle {
   val Vsync = Output(Bool())
 }
 
-class VideoController(start: Int, size: Int) extends Module {
+class VideoController(start: Int, size: Int, freq: Int) extends Module {
   val io = IO(new Bundle {
     val bus = Flipped(new Bus())
     val vga = new VGA()
@@ -41,15 +41,7 @@ class VideoController(start: Int, size: Int) extends Module {
   val VGA_V_FRONT_PORCH_SIZE = 10
   val VGA_V_SYNC_PULSE_SIZE = 2
   val VGA_V_BACK_PORCH_SIZE = 33
-  // val VGA_H_DISPLAY_SIZE = 1280
-  // val VGA_V_DISPLAY_SIZE = 960
-  // val VGA_H_FRONT_PORCH_SIZE = 80
-  // val VGA_H_SYNC_PULSE_SIZE = 136
-  // val VGA_H_BACK_PORCH_SIZE = 216
-  // val VGA_V_FRONT_PORCH_SIZE = 1
-  // val VGA_V_SYNC_PULSE_SIZE = 3
-  // val VGA_V_BACK_PORCH_SIZE = 30
-  val SCALE_FACTOR = 3;
+  val SCALE_FACTOR = freq / 25000000;
 
   val VGA_H_TOTAL = VGA_H_DISPLAY_SIZE + VGA_H_FRONT_PORCH_SIZE + VGA_H_SYNC_PULSE_SIZE + VGA_H_BACK_PORCH_SIZE
   val VGA_V_TOTAL = VGA_V_DISPLAY_SIZE + VGA_V_FRONT_PORCH_SIZE + VGA_V_SYNC_PULSE_SIZE + VGA_V_BACK_PORCH_SIZE

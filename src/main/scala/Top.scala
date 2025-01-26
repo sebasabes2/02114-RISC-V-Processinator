@@ -19,7 +19,7 @@ class TopSlow(freq: Int, baud: Int) extends Module {
   val led = withReset(RegNext(CPUreset)) { Module(new LEDController(0x2000, 0x1000)) }
   val uart = withReset(RegNext(CPUreset)) { Module(new UARTController(0x3000, 0x1000, freq, baud)) }
   val buttons = withReset(RegNext(CPUreset)) { Module(new ButtonController(0x4000,0x1000, freq)) }
-  val video = Module(new VideoController(0x100000, 0x100000))
+  val video = Module(new VideoController(0x100000, 0x100000, freq))
   instMem.io <> CPU.io.inst
   dataMem.io <> CPU.io.data
   led.io.bus <> CPU.io.data
@@ -81,5 +81,5 @@ class Top(freq: Int, baud: Int) extends Module {
 }
 
 object Top extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Top(75000000, 115200))
+  (new chisel3.stage.ChiselStage).emitVerilog(new Top(100000000, 115200))
 }
