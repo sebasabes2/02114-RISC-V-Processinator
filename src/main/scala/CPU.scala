@@ -13,7 +13,7 @@ class CPU extends Module {
   })
 
   // GP-Registers
-  val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
+  val reg = Reg(Vec(32, UInt(32.W)))
   val newReg = WireDefault(reg)
   reg := newReg
   io.reg := newReg
@@ -43,68 +43,65 @@ class CPU extends Module {
   val rs1 = (instruction(19,15)) //read register 1
   val rs2 = (instruction(24,20)) //read register 2
   val funct7 = (instruction(31,25))
-
+  
   val I_imm = Fill(20, instruction(31)) ## instruction(31,20)
   val S_imm = Fill(20, instruction(31)) ## instruction(31,25) ## instruction(11,7)
   val B_imm = Fill(19, instruction(31)) ## (instruction(31) ## instruction(7) ## instruction(30,25) ## instruction(11,8) ## 0.U(1.W))
   val U_imm = (instruction(31,12) ## 0.U(12.W))
   val J_imm = Fill(11,instruction(31)) ## (instruction(31) ## instruction(19,12) ## instruction(20) ## instruction(30,21) ## 0.U(1.W))
 
+  // ALU signals
   val operand1 = WireInit(UInt(32.W), DontCare)
   val operand2 = WireInit(UInt(32.W), DontCare)
-  val ALUWB = WireDefault(false.B)
-  val MemWB = WireDefault(false.B)
-  val MemStore = WireDefault(false.B)
-  val ALUmode = WireDefault(0.U(4.W))
-  val Bmode = WireDefault(false.B)
+  val aluMode = WireDefault(0.U(4.W))
+  val aluResult = WireInit(UInt(32.W), DontCare)
+
+  // Control signals
+  val exWriteBack = WireDefault(false.B)
+  val memWriteBack = WireDefault(false.B)
+  val memStore = WireDefault(false.B)
+  val haveBranch = WireDefault(false.B)
+  val jump = WireDefault(false.B)
 
   val useRs1 = WireDefault(false.B)
   val useRs2 = WireDefault(false.B)
 
-  // val jumpAddress = WireInit(UInt(32.W), DontCare)
-  val doJump = WireDefault(false.B)
-
-  
-  // ALUResult belongs to Execute stage
-  val ALUResult = WireInit(UInt(32.W), DontCare)
-
-  val regVal1 = Mux(RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1), ALUResult, newReg(rs1))
-  val regVal2 = Mux(RegNext(ALUWB) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2), ALUResult, newReg(rs2))
+  val regVal1 = Mux(RegNext(exWriteBack) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs1), aluResult, newReg(rs1))
+  val regVal2 = Mux(RegNext(exWriteBack) && (RegNext(rd) =/= 0.U) && (RegNext(rd) === rs2), aluResult, newReg(rs2))
 
   switch (opcode) {
     is (Opcodes.add) {
       operand1 := regVal1
       operand2 := regVal2
-      ALUWB := true.B
-      ALUmode := funct7(5) ## funct3
+      exWriteBack := true.B
+      aluMode := funct7(5) ## funct3
       useRs1 := true.B
       useRs2 := true.B
     }
     is (Opcodes.addi) {
       operand1 := regVal1
       operand2 := I_imm
-      ALUWB := true.B
+      exWriteBack := true.B
       val artithmeticToggle = Mux(funct3 === ALUModes.shiftRight, funct7(5), 0.U(1.W))
-      ALUmode := artithmeticToggle ## funct3
+      aluMode := artithmeticToggle ## funct3
       useRs1 := true.B
     }
     is (Opcodes.load) {
       operand1 := regVal1
       operand2 := I_imm
-      MemWB := true.B
+      memWriteBack := true.B
       useRs1 := true.B
     }
     is (Opcodes.store) {
       operand1 := regVal1
       operand2 := S_imm
-      MemStore := true.B
+      memStore := true.B
       useRs1 := true.B
     }
     is (Opcodes.branch) {
       operand1 := regVal1
       operand2 := regVal2
-      ALUmode := funct3
-      Bmode := true.B
+      haveBranch := true.B
       useRs1 := true.B
       useRs2 := true.B
       jumpAddress := PC + B_imm
@@ -112,148 +109,136 @@ class CPU extends Module {
     is (Opcodes.lui) {
       operand1 := 0.U
       operand2 := U_imm
-      ALUWB := true.B
+      exWriteBack := true.B
     }
     is (Opcodes.auipc) {
       operand1 := PC
       operand2 := U_imm
-      ALUWB := true.B
+      exWriteBack := true.B
     }
     is (Opcodes.jal){
       operand1 := PC
       operand2 := 4.U
-      ALUWB := true.B
+      exWriteBack := true.B
       jumpAddress := PC + J_imm
-      doJump := true.B
+      jump := true.B
     }
     is (Opcodes.jalr){
       operand1 := PC
       operand2 := 4.U
-      ALUWB := true.B
+      exWriteBack := true.B
       jumpAddress := regVal1 + I_imm
       useRs1 := true.B
-      doJump := true.B
+      jump := true.B
     }
   }
 
-  stall := RegNext(MemWB && rd =/= 0.U) && ((RegNext(rd) === rs1 && useRs1) || (RegNext(rd) === rs2) && useRs2)
+  stall := RegNext(memWriteBack && rd =/= 0.U) && ((RegNext(rd) === rs1 && useRs1) || (RegNext(rd) === rs2) && useRs2)
 
   val flush = branch || stall
   when (flush) {
-    ALUWB := false.B
-    MemWB := false.B
-    MemStore := false.B
-    Bmode := false.B
-    doJump := false.B
+    exWriteBack := false.B
+    memWriteBack := false.B
+    memStore := false.B
+    haveBranch := false.B
+    jump := false.B
   }
 
   // Execute
-  val op1 = RegNext(operand1)
-  val op2 = RegNext(operand2)
-  val BranchMode = RegNext(Bmode)
-  val ex_ALUmode = RegNext(ALUmode)
-  val funct3_ex = RegNext(funct3)
+  val operand1Reg = RegNext(operand1)
+  val operand2Reg = RegNext(operand2)
+  val aluModeReg = RegNext(aluMode)
 
-  switch (ex_ALUmode(2,0)) {
+  switch (aluModeReg(2,0)) {
     is (ALUModes.add) {
-      when (ex_ALUmode(3)) {
-        ALUResult := op1 - op2
+      when (aluModeReg(3)) {
+        aluResult := operand1Reg - operand2Reg
       } .otherwise {
-        ALUResult := op1 + op2
+        aluResult := operand1Reg + operand2Reg
       }
     }
     is (ALUModes.shiftLeft){
-      ALUResult := op1 << op2(5,0)
+      aluResult := operand1Reg << operand2Reg(5,0)
     }
     is (ALUModes.setLessThan){
-      ALUResult := (op1.asSInt < op2.asSInt).asUInt()
+      aluResult := (operand1Reg.asSInt < operand2Reg.asSInt).asUInt()
     }
     is (ALUModes.setLessThanU){
-      ALUResult := (op1 < op2)
+      aluResult := (operand1Reg < operand2Reg)
     }
     is (ALUModes.xor){
-      ALUResult := op1 ^ op2
+      aluResult := operand1Reg ^ operand2Reg
     }
     is (ALUModes.shiftRight){
-      when (ex_ALUmode(3)) { //sra
-        ALUResult := (op1.asSInt >> op2(4,0)).asUInt()
+      when (aluModeReg(3)) { //sra
+        aluResult := (operand1Reg.asSInt >> operand2Reg(4,0)).asUInt()
       } .otherwise { //srl
-        ALUResult := op1 >> op2(4,0)
+        aluResult := operand1Reg >> operand2Reg(4,0)
       }
     }
     is (ALUModes.or){
-      ALUResult := op1 | op2
+      aluResult := operand1Reg | operand2Reg
     }
     is (ALUModes.and){
-      ALUResult := op1 & op2
+      aluResult := operand1Reg & operand2Reg
     }
   }
 
-  // val BranchTaken = WireDefault(false.B)
-  val BranchTaken = WireInit(Bool(), DontCare)
-  switch(ex_ALUmode) {
+  val branchTaken = WireInit(Bool(), DontCare)
+  switch(RegNext(funct3)) {
     is(BranchModes.beq) {
-      BranchTaken := op1 === op2
+      branchTaken := operand1Reg === operand2Reg
     }
     is(BranchModes.bne) {
-      BranchTaken := op1 =/= op2
+      branchTaken := operand1Reg =/= operand2Reg
     }
     is(BranchModes.blt) {
-      BranchTaken := op1.asSInt < op2.asSInt
+      branchTaken := operand1Reg.asSInt < operand2Reg.asSInt
     }
     is(BranchModes.bge) {
-      BranchTaken := op1.asSInt >= op2.asSInt
+      branchTaken := operand1Reg.asSInt >= operand2Reg.asSInt
     }
     is(BranchModes.bltu) {
-      BranchTaken := op1 < op2
+      branchTaken := operand1Reg < operand2Reg
     }
     is(BranchModes.bgeu) {
-      BranchTaken := op1 >= op2
+      branchTaken := operand1Reg >= operand2Reg
     }
   }
+  branch := (RegNext(haveBranch) && branchTaken) || RegNext(jump)
 
-  branch := (BranchMode && BranchTaken) || RegNext(doJump)
-
-  // Memory (Execute continue)
-
-  io.data.addr := ALUResult
+  io.data.addr := aluResult
   io.data.writeData := newReg(RegNext(rs2))
-  io.data.writeByte := RegNext(MemStore) && (funct3_ex === 0.U)
-  io.data.writeHalf := RegNext(MemStore) && (funct3_ex === 1.U)
-  io.data.writeWord := RegNext(MemStore) && (funct3_ex === 2.U)
-
+  io.data.writeByte := RegNext(memStore) && (RegNext(funct3) === 0.U)
+  io.data.writeHalf := RegNext(memStore) && (RegNext(funct3) === 1.U)
+  io.data.writeWord := RegNext(memStore) && (RegNext(funct3) === 2.U)
 
   // Memory/Writeback
-  val funct3_mem = RegNext(funct3_ex)
-  // val funct3_wb = RegNext(funct3_mem)
-  
-  //LoadToMem belongs to Mem-WB stage
-  // val LoadToMem = WireDefault(0.U(32.W))
-  val LoadToMem = WireInit(UInt(32.W), DontCare)
-  switch(funct3_mem){
-    is(0.U){ //byte
-      LoadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
+  val loadToMem = WireInit(UInt(32.W), DontCare)
+  switch(RegNext(RegNext(funct3))){
+    is(0.U){ // byte
+      loadToMem := Fill(24,io.data.readData(7)) ## io.data.readData(7,0)
     }
-    is(1.U){//half
-      LoadToMem := Fill(16,io.data.readData(15)) ## io.data.readData(15,0)
+    is(1.U){ // half word
+      loadToMem := Fill(16,io.data.readData(15)) ## io.data.readData(15,0)
     }
-    is(2.U){ //word
-      LoadToMem := io.data.readData
+    is(2.U){ // word
+      loadToMem := io.data.readData
     }
-    is(4.U){ //byte (U)
-      LoadToMem := io.data.readData(7,0)
+    is(4.U){ // byte unsigned
+      loadToMem := io.data.readData(7,0)
     }
-    is(5.U){ //half (U)
-      LoadToMem := io.data.readData(15,0)
+    is(5.U){ // half word unsigned
+      loadToMem := io.data.readData(15,0)
     }
   }
 
   val destination = RegNext(RegNext(rd))
   when (destination =/= 0.U) {
-    when (RegNext(RegNext(ALUWB))) {
-      newReg(destination) := RegNext(ALUResult)
-    } .elsewhen (RegNext(RegNext(MemWB))) {
-      newReg(destination) := LoadToMem
+    when (RegNext(RegNext(exWriteBack))) {
+      newReg(destination) := RegNext(aluResult)
+    } .elsewhen (RegNext(RegNext(memWriteBack))) {
+      newReg(destination) := loadToMem
     }
   }
 }
