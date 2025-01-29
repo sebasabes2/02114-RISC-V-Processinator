@@ -56,8 +56,8 @@ def writeELF(ser, fileArray):
       content += bytes(b'\x00'*missingBytes)
       writeBinary(ser, content, addr)
 
+  print("Starting program at address: 0x{:02X}".format(entryPoint))
   writeEndCode(ser, entryPoint)
-
 
 def writeBinary(ser, binary, wrPtr = 0):
   ser.write(startCode)

@@ -25,7 +25,7 @@ class BootLoader() extends Module {
   val startCode = 0x00017373.U
   val endCode = 0x00027373.U
   val writePointer = Reg(UInt(32.W))
-  val startAddr = RegInit(0.U(32.W))
+  val startAddr = Reg(UInt(32.W))
   val fsm = RegInit(state.idle)
   switch (fsm) {
     is (idle) {
