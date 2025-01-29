@@ -8,6 +8,5 @@ void print(char *array) {
 }
 
 void main() {
-  char string[] =  "Hello, world!\n";
-  print("Hello, world!\n");
+  print("Hello, from C\n");
 }
