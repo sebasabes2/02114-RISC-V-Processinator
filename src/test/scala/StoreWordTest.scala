@@ -5,6 +5,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 class StoreWordTest extends AnyFlatSpec with ChiselScalatestTester {
   "CPU" should "pass" in {
     test(new CPU()) { dut =>
+      // Fetch
+      dut.clock.step(1)
+      // Decode
       val lui = 0xdeadc0b7l.U // li x1, 0xdeadbeef
       val addi = 0xeef08093l.U // li x1, 0xdeadbeef
       dut.io.inst.readData.poke(lui)

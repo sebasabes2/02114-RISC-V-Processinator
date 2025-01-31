@@ -50,10 +50,10 @@ def writeELF(ser, fileArray):
     secSize = bytesToInt(sec[20:24])
     name = strTable[nameIndex:].split(b'\x00')[0].decode('ascii')
     if (secType == 1 and addr != 0): # If type == SHT_PROGBITS. Addr != 0 should be changed to something smarter, but this is to avoid comments.
-      print("Writing segment: " + name + " starting at address 0x" + '{:02X}'.format(addr))
       content = fileArray[secOffset : secOffset + secSize]
       missingBytes = (-len(content)) % 4
       content += bytes(b'\x00'*missingBytes)
+      print("Writing segment: " + name + " at addresses 0x{:02X}".format(addr) + "-0x{:02X}".format(addr + len(content)))
       writeBinary(ser, content, addr)
 
   print("Starting program at address: 0x{:02X}".format(entryPoint))

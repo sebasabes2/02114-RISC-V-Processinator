@@ -11,7 +11,6 @@ jal ra, transmit
 
 loop:
 beq x0, x0, loop
-nop # hazard
 
 _start:
 li a0, 'a'

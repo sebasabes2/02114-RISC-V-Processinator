@@ -81,5 +81,5 @@ class Top(freq: Int, baud: Int) extends Module {
 }
 
 object Top extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Top(100000000, 115200))
+  (new chisel3.stage.ChiselStage).emitVerilog(new Top(75000000, 115200))
 }

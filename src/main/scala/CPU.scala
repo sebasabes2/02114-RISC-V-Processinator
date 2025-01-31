@@ -133,9 +133,9 @@ class CPU extends Module {
     }
   }
 
-  stall := RegNext(memWriteBack && rd =/= 0.U) && ((RegNext(rd) === rs1 && useRs1) || (RegNext(rd) === rs2) && useRs2)
+  stall := RegNext(memWriteBack && (rd =/= 0.U)) && (((RegNext(rd) === rs1) && useRs1) || ((RegNext(rd) === rs2) && useRs2))
 
-  val flush = branch || stall
+  val flush = branch || stall || RegNext(reset.asBool)
   when (flush) {
     exWriteBack := false.B
     memWriteBack := false.B
