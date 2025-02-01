@@ -14,11 +14,11 @@ class TopSlow(freq: Int, baud: Int) extends Module {
 
   val CPUreset = WireDefault(reset) // Needed for boot loader
   val CPU = withReset(RegNext(CPUreset)) { Module(new CPU()) }
-  val instMem = Module(new Memory(0x0000, 0x1000))
-  val dataMem = Module(new Memory(0x1000, 0x1000))
-  val led = withReset(RegNext(CPUreset)) { Module(new LEDController(0x2000, 0x1000)) }
-  val uart = withReset(RegNext(CPUreset)) { Module(new UARTController(0x3000, 0x1000, freq, baud)) }
-  val buttons = withReset(RegNext(CPUreset)) { Module(new ButtonController(0x4000,0x1000, freq)) }
+  val instMem = Module(new Memory(0x0000, 0x4000))
+  val dataMem = Module(new Memory(0x4000, 0x4000))
+  val led = withReset(RegNext(CPUreset)) { Module(new LEDController(0x8000, 0x1000)) }
+  val uart = withReset(RegNext(CPUreset)) { Module(new UARTController(0x9000, 0x1000, freq, baud)) }
+  val buttons = withReset(RegNext(CPUreset)) { Module(new ButtonController(0xa000,0x1000, freq)) }
   val video = Module(new VideoController(0x100000, 0x100000, freq))
   instMem.io <> CPU.io.inst
   dataMem.io <> CPU.io.data

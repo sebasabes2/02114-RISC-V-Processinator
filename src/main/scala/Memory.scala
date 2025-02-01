@@ -4,6 +4,7 @@ import chisel3.util._
 class Bus extends Bundle {
   val addr = Output(UInt(32.W))
   val readData = Input(UInt(32.W))
+  val read = Output(Bool())
   val readValid = Input(Bool())
   val writeData = Output(UInt(32.W))
   val writeWord = Output(Bool())

@@ -64,7 +64,7 @@ class ButtonController(start: Int, size: Int, freq: Int) extends Module {
   val width = log2Up(size)
   val page = io.bus.addr(31, width)
   val index = io.bus.addr(width - 1,0)
-  val valid = RegNext(page === (start/size).U)
+  val valid = RegNext(page === (start/size).U && io.bus.read)
   when (valid) {
     when (RegNext(index(2))) {
       io.bus.readData := (btn3.io.debounced ## btn2.io.debounced ## btn1.io.debounced ## btn0.io.debounced

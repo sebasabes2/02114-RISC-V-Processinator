@@ -3,5 +3,7 @@
 
 void display(int x, int y, int color);
 void transmit(char c);
+int buttonsPress();
+int buttonsHold();
 
 #endif

@@ -1,5 +1,6 @@
 .text
-
+.global _start
+_start:
 li s0, 320 # max x-value
 li s1, 240 # max y-value
 
@@ -92,7 +93,7 @@ jal ra, check_for_input
 beq x0, x0, wait_for_input
 
 check_for_input:
-li t0, 0x4000  # Btn address
+li t0, 0xa000  # Btn address
 lw t1, 0(t0)   # Read board buttons
 srli t1, t1, 4
 lw t2, 4(t0)   # Read Pmod buttons

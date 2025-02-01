@@ -1,7 +1,7 @@
 .text
 .global transmit
 transmit:
-li t1, 0x3000 # UART address
+li t1, 0x9000 # UART address
 lw t0, 4(t1)
 andi t0, t0, 1
 beq x0, t0, transmit

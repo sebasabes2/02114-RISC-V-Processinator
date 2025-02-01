@@ -29,6 +29,7 @@ class CPU extends Module {
 
   // Fetch
   io.inst.addr := newPC
+  io.inst.read := true.B
   io.inst.writeWord := false.B
   io.inst.writeHalf := false.B
   io.inst.writeByte := false.B
@@ -208,6 +209,7 @@ class CPU extends Module {
   branch := (RegNext(haveBranch) && branchTaken) || RegNext(jump)
 
   io.data.addr := aluResult
+  io.data.read := RegNext(memWriteBack)
   io.data.writeData := newReg(RegNext(rs2))
   io.data.writeByte := RegNext(memStore) && (RegNext(funct3) === 0.U)
   io.data.writeHalf := RegNext(memStore) && (RegNext(funct3) === 1.U)

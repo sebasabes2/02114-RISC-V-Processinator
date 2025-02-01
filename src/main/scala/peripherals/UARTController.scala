@@ -19,11 +19,11 @@ class UARTController(start: Int, size: Int, freq: Int, baud: Int) extends Module
   uart.io.pins.rx := io.rx
   io.tx := uart.io.pins.tx
 
-  uart.io.port.read := page === (start/size).U
+  val valid = page === (start/size).U && io.bus.read
+  uart.io.port.read := valid
   uart.io.port.addr := index
 
-  val valid = RegNext(page === (start/size).U)
-  when (valid) {
+  when (RegNext(valid)) {
     io.bus.readData := uart.io.port.rdData
   } .otherwise {
     io.bus.readData := 0.U
