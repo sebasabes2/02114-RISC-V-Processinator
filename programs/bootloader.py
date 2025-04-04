@@ -49,7 +49,7 @@ def writeELF(ser, fileArray):
     secOffset = bytesToInt(sec[16:20])
     secSize = bytesToInt(sec[20:24])
     name = strTable[nameIndex:].split(b'\x00')[0].decode('ascii')
-    if (secType == 1 and addr != 0): # If type == SHT_PROGBITS. Addr != 0 should be changed to something smarter, but this is to avoid comments.
+    if (secType == 1 and name != ".comment"): # If type == SHT_PROGBITS. Addr != 0 should be changed to something smarter, but this is to avoid comments. UPDATE: it has been changed to check .comment name. more sections or smarter solution might be needed in the future. 
       content = fileArray[secOffset : secOffset + secSize]
       missingBytes = (-len(content)) % 4
       content += bytes(b'\x00'*missingBytes)
